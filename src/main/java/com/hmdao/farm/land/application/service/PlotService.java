@@ -67,7 +67,8 @@ class PlotService implements ManagePlotUseCase, PlotQueryUseCase {
                 .findFirst()
                 .ifPresent(usage -> {
                     throw new ResourceConflictException("BR-10",
-                            "Lô đất '%s' còn %s. Hãy xóa hoặc kết thúc chúng trước khi xóa lô.".formatted(plot.getName(), usage));
+                            "Lô đất '%s' có lịch sử canh tác: %s. Không thể xóa để bảo toàn lịch sử sử dụng đất."
+                                    .formatted(plot.getName(), usage));
                 });
         plots.delete(plot);
     }

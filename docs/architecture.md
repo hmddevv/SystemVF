@@ -41,7 +41,7 @@ khai báo trong `application`, cấp thấp implement nó.
 | `CareReminderService` | `CareRule` | `DrySeasonIrrigationRule`, `PostHarvestPruningRule`, … |
 | `SeasonService` | `SeasonPolicy` | `PerennialSeasonPolicy`, `AnnualSeasonPolicy` |
 | `PlantingController` | `PlantCropUseCase`, `PlantingLifecycleUseCase`, `PlantingQueryUseCase` | `PlantingService` |
-| `PlotService`, `CropService` (kiểm tra trước khi xóa) | `PlotUsagePort`, `CropUsagePort` | Adapter trong module `cultivation` (M2) |
+| `PlotService`, `CropService` (kiểm tra trước khi xóa) | `PlotUsagePort`, `CropUsagePort` | `PlotUsageAdapter`, `CropUsageAdapter` trong module `cultivation` |
 
 `PlotUsagePort`/`CropUsagePort` là DIP ở cấp **module**: `cultivation` phụ thuộc `land` và
 `catalog`, nên `land` không được hỏi thẳng `cultivation` "lô này còn lứa trồng không".
@@ -282,9 +282,9 @@ Mỗi quy tắc có mã để truy vết tới test case.
 | Mã | Quy tắc | Nơi kiểm tra | Lỗi |
 |---|---|---|---|
 | BR-01 | Tên nông trại/lô/cây trồng không trống; diện tích lô > 0 m²; tên lô duy nhất trong một nông trại; tên + giống cây duy nhất trong danh mục (không phân biệt hoa thường) | DTO + DB `CHECK`/`UNIQUE` | 400 / 409 |
-| BR-02 | Ngày trồng không ở tương lai; số cây > 0 | `Planting` | 422 |
+| BR-02 | Ngày trồng không ở tương lai (theo giờ Việt Nam); số cây > 0. Lứa trồng mới là GROWING, hoặc PRODUCING khi số hóa vườn đã cho thu hoạch (`alreadyProducing`) | `Planting` | 422 |
 | BR-03 | Chỉ chuyển GROWING→PRODUCING, GROWING/PRODUCING→TERMINATED; TERMINATED là trạng thái cuối | `PlantingStatus` | 422 |
-| BR-04 | Kết thúc lứa trồng bắt buộc có lý do; ngày kết thúc ≥ ngày trồng và ≤ hôm nay | `Planting.terminate()` | 422 |
+| BR-04 | Kết thúc lứa trồng bắt buộc có lý do; ngày kết thúc ≥ ngày trồng và ≤ hôm nay; ghi chú tùy chọn. Sửa ngày trồng không được vượt ngày kết thúc | `Planting.terminate()` / `correct()` | 422 |
 | BR-05 | Mỗi lứa trồng có tối đa một niên vụ cho mỗi năm; cây ngắn ngày tối đa một niên vụ | `SeasonPolicy` + DB `UNIQUE` | 409 / 422 |
 | BR-05a | Niên vụ bắt đầu theo `CROP.season_start_month` (1–12). Khi ghi hoạt động/thu hoạch, hệ thống tự gán vào niên vụ chứa ngày đó; chưa có thì tự tạo | `SeasonAssigner` | — |
 | BR-06 | Niên vụ: ngày bắt đầu ≤ ngày kết thúc, không trước ngày trồng, không sau ngày cưa bỏ | `Season` | 422 |
@@ -308,7 +308,7 @@ Tiền tố `/api/v1`. Tài liệu tương tác tại `/swagger-ui.html`.
 | Nông trại | `GET POST /farms` · `GET PUT DELETE /farms/{id}` |
 | Lô đất | `GET POST /farms/{farmId}/plots` · `GET PUT DELETE /plots/{id}` |
 | Cây trồng | `GET POST /crops` · `GET PUT DELETE /crops/{id}` |
-| Lứa trồng | `GET POST /plots/{plotId}/plantings?activeOnly=true` · `GET PUT /plantings/{id}` |
+| Lứa trồng | `GET POST /plots/{plotId}/plantings?activeOnly=true` · `GET PUT DELETE /plantings/{id}` (PUT/DELETE chỉ để sửa nhập sai) |
 | Vòng đời | `POST /plantings/{id}/production-start` · `POST /plantings/{id}/termination` |
 | Niên vụ | `GET POST /plantings/{id}/seasons` · `GET PUT DELETE /seasons/{id}` |
 | Hoạt động | `GET POST /seasons/{id}/activities` (phân trang) · `PUT DELETE /activities/{id}` |

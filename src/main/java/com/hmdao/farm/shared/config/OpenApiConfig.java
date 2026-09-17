@@ -2,8 +2,13 @@ package com.hmdao.farm.shared.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.HeaderParameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +29,21 @@ public class OpenApiConfig {
                         trong docs/architecture.md."""));
     }
 
+    /**
+     * Lỗi validation (400) do lớp cha ResponseEntityExceptionHandler xử lý nên springdoc không tự
+     * phát hiện; bổ sung cho mọi thao tác có request body.
+     */
+    @Bean
+    OpenApiCustomizer validationErrorResponse() {
+        return openApi -> openApi.getPaths().values().stream()
+                .flatMap(path -> path.readOperations().stream())
+                .filter(operation -> operation.getRequestBody() != null)
+                .forEach(operation -> operation.getResponses().addApiResponse("400", new ApiResponse()
+                        .description("Dữ liệu không hợp lệ — chi tiết từng trường trong 'errors'")
+                        .content(new Content().addMediaType("application/problem+json",
+                                new MediaType().schema(new Schema<>().$ref("#/components/schemas/ProblemDetail"))))));
+    }
+
     /** MVP chưa có đăng nhập: cho phép chọn chủ sở hữu qua header ngay trên Swagger UI. */
     @Bean
     OperationCustomizer currentUserHeader() {
@@ -31,6 +51,6 @@ public class OpenApiConfig {
                 .name("X-User-Id")
                 .required(false)
                 .description("Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.")
-                .schema(new IntegerSchema()));
+                .schema(new IntegerSchema().format("int64")));
     }
 }

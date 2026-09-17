@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "3. Cây trồng", description = "Danh mục loại cây và tháng bắt đầu niên vụ")
@@ -48,6 +50,7 @@ class CropController {
     @Operation(summary = "Thêm cây trồng vào danh mục",
             description = "Cây lâu năm bắt buộc có tháng bắt đầu niên vụ; cây ngắn ngày để trống (BR-05a).")
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     ResponseEntity<CropResponse> create(@Valid @RequestBody CropRequest request) {
         CropView created = manageCrop.create(request.toCommand());
         return ResponseEntity.created(URI.create("/api/v1/crops/" + created.id())).body(CropResponse.from(created));
@@ -61,8 +64,8 @@ class CropController {
 
     @Operation(summary = "Xóa cây trồng", description = "Trả 409 nếu cây đã có lứa trồng (BR-10).")
     @DeleteMapping("/{cropId}")
-    ResponseEntity<Void> delete(@PathVariable Long cropId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@PathVariable Long cropId) {
         manageCrop.delete(cropId);
-        return ResponseEntity.noContent().build();
     }
 }

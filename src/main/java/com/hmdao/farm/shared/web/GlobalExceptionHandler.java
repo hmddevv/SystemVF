@@ -19,6 +19,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -41,26 +42,31 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final String PROBLEM_BASE = "urn:farm:problem:";
 
     @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     ProblemDetail handleNotFound(ResourceNotFoundException ex) {
         return domainProblem(HttpStatus.NOT_FOUND, "not-found", "Không tìm thấy tài nguyên", ex);
     }
 
     @ExceptionHandler(ResourceConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
     ProblemDetail handleConflict(ResourceConflictException ex) {
         return domainProblem(HttpStatus.CONFLICT, "conflict", "Xung đột dữ liệu", ex);
     }
 
     @ExceptionHandler(BusinessRuleViolationException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     ProblemDetail handleBusinessRule(BusinessRuleViolationException ex) {
         return domainProblem(HttpStatus.UNPROCESSABLE_CONTENT, "business-rule", "Vi phạm quy tắc nghiệp vụ", ex);
     }
 
     @ExceptionHandler(UnauthenticatedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     ProblemDetail handleUnauthenticated(UnauthenticatedException ex) {
         return domainProblem(HttpStatus.UNAUTHORIZED, "unauthenticated", "Chưa xác định người dùng", ex);
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
     ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 "Dữ liệu vừa được thay đổi bởi thao tác khác. Hãy tải lại rồi thực hiện lại.");
@@ -71,6 +77,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /** Lớp phòng thủ cuối: ràng buộc DB (FK RESTRICT, UNIQUE) bị vi phạm do race condition. */
     @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
     ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Vi phạm ràng buộc cơ sở dữ liệu: {}", ex.getMostSpecificCause().getMessage());
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
