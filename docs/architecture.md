@@ -39,7 +39,7 @@ khai báo trong `application`, cấp thấp implement nó.
 | Mọi application service | `CurrentUserProvider` | `HeaderCurrentUserProvider` (MVP) → `JwtCurrentUserProvider` (Phase 5) |
 | `Planting`, `SeasonService` | `java.time.Clock` | `Clock.systemDefaultZone()` / `Clock.fixed()` trong test |
 | `CareReminderService` | `CareRule` | `DrySeasonIrrigationRule`, `PostHarvestPruningRule`, … |
-| `SeasonService` | `SeasonPolicy` | `PerennialSeasonPolicy`, `AnnualSeasonPolicy` |
+| `SeasonAssigner` | `SeasonPolicy` | `PerennialSeasonPolicy`, `AnnualSeasonPolicy` |
 | `PlantingController` | `PlantCropUseCase`, `PlantingLifecycleUseCase`, `PlantingQueryUseCase` | `PlantingService` |
 | `PlotService`, `CropService` (kiểm tra trước khi xóa) | `PlotUsagePort`, `CropUsagePort` | `PlotUsageAdapter`, `CropUsageAdapter` trong module `cultivation` |
 
@@ -146,8 +146,24 @@ com.hmdao.farm
 │   └── web               FarmController, PlotController, dto/
 ├── catalog               (cùng cấu trúc — Crop)
 ├── cultivation           (cùng cấu trúc — Planting, Season, Activity, Harvest)
-├── analytics             (Phase 2)
-└── reminder              (Phase 2)
+│   └── config            CultivationConfig — khai báo bean cho các SeasonPolicy
+├── analytics
+│   ├── domain            ProfitLossGrouping
+│   ├── application       port/in ProfitLossReportUseCase · port/out ProfitLossQueryPort
+│   │                     dto ProfitLossReport, ProfitLossRow, … · service ProfitLossReportService
+│   ├── infrastructure    JpqlProfitLossQueryAdapter
+│   └── web               ReportController, dto/
+└── reminder
+    ├── domain            CareRule + các luật, CareContext, Reminder, ReminderSeverity
+    ├── application       port/in CareReminderUseCase · port/out CareContextQueryPort
+    │                     service CareReminderService
+    ├── config            ReminderConfig — khai báo bean cho các CareRule
+    ├── infrastructure    JpqlCareContextQueryAdapter
+    └── web               ReminderController, dto/
+
+Chính sách nghiệp vụ (`SeasonPolicy`, `CareRule`) nằm ở `domain` nên không mang annotation
+Spring — ArchUnit chặn. Mỗi module có một lớp `config` khai báo chúng thành bean, service
+nhận `List<…>` và không phải sửa khi có luật mới.
 ```
 
 ### 3.3 Chi tiết Ports & Adapters — module `cultivation` (lứa trồng)
@@ -294,6 +310,12 @@ Mỗi quy tắc có mã để truy vết tới test case.
 | BR-10 | Không xóa nông trại/lô/cây trồng/lứa trồng/niên vụ còn dữ liệu con (409); bản ghi rỗng tạo nhầm được xóa. Lứa trồng muốn "bỏ" thì dùng `terminate()`. Hoạt động và thu hoạch được xóa thật để sửa nhập sai; niên vụ rỗng còn lại sau đó cũng xóa được | Service + DB `FK RESTRICT` | 409 |
 | BR-11 | Dữ liệu giới hạn theo chủ sở hữu; tài nguyên của người khác trả 404 để không lộ sự tồn tại | Truy vấn `findOwned…` | 404 |
 | BR-12 | Hoạt động loại `OTHER` bắt buộc có ghi chú — nếu không, nhật ký mất luôn ý nghĩa của dòng đó | `Activity` | 422 |
+| BR-13 | Báo cáo gom theo `SEASON.year`, **không** theo năm dương lịch của ngày ghi nhận — nếu không, doanh thu cà phê tháng 1 sẽ tách khỏi chi phí tháng 3 vụ trước (BR-05a). `year` bỏ trống = mọi niên vụ; `farmId` bỏ trống = mọi nông trại của chủ sở hữu | `ProfitLossReportService` | — |
+| BR-14 | Lứa trồng chưa có nhật ký/thu hoạch vẫn xuất hiện trong báo cáo với số 0. Vắng mặt sẽ bị hiểu là mất dữ liệu, trong khi `GROUP BY` thuần thì luôn bỏ qua nhóm rỗng | `ProfitLossQueryPort` | — |
+| BR-15 | Lãi/lỗ luôn kèm chỉ số chuẩn hoá: trên 1.000 m², trên cây, kg trên cây. Số tuyệt đối không trả lời được "nơi nào canh tác hiệu quả" vì lô lớn luôn thắng lô nhỏ. Thiếu diện tích hoặc số cây thì để trống thay vì chia bừa | `ProfitLossRow` | — |
+| BR-16 | Lô trồng xen được đánh cờ `sharedPlot`: chi phí dùng chung (vd. tưới cả lô) hiện ghi vào từng lứa, nên số liệu theo đơn vị diện tích của nhóm đó chỉ là ước lượng (ADR-10) | `ProfitLossReportService` | — |
+| BR-17 | `groupBy=PLANTING` kèm luỹ kế và niên vụ hoàn vốn, tính trên **toàn bộ** niên vụ của lứa dù báo cáo đang lọc `year` — cây lâu năm lỗ vài năm kiến thiết cơ bản là bình thường, báo cáo theo năm mà thiếu luỹ kế sẽ kết luận sai | `ProfitLossReportService` | — |
+| BR-18 | Nhắc việc chỉ tính cho lứa đang canh tác và **không lưu trạng thái**: lời nhắc biến mất khi nhật ký tương ứng được ghi. Không có nút "đã làm" vì nhà nông vẫn phải ghi nhật ký (ADR-12) | `CareReminderService` | — |
 
 Validation hai lớp: **cú pháp** (Bean Validation trên request DTO → 400) và **ngữ nghĩa**
 (bất biến domain → 422). Ràng buộc DB (`CHECK`, `UNIQUE`, `FK`) là lớp phòng thủ cuối.
@@ -314,8 +336,8 @@ Tiền tố `/api/v1`. Tài liệu tương tác tại `/swagger-ui.html`.
 | Niên vụ | `GET /plantings/{id}/seasons` · `GET DELETE /seasons/{id}` — không có POST/PUT: niên vụ là dữ liệu dẫn xuất (ADR-7) |
 | Hoạt động | `POST /plantings/{id}/activities` (tự gán niên vụ) · `GET /seasons/{id}/activities` (phân trang) · `GET PUT DELETE /activities/{id}` |
 | Thu hoạch | `POST /plantings/{id}/harvests` (tự gán niên vụ) · `GET /seasons/{id}/harvests` (phân trang) · `GET PUT DELETE /harvests/{id}` |
-| Báo cáo (P2) | `GET /reports/profit-loss?groupBy=CROP\|PLOT\|PLANTING&year=&farmId=` |
-| Nhắc việc (P2) | `GET /reminders?farmId=` |
+| Báo cáo | `GET /reports/profit-loss?groupBy=CROP\|PLOT\|PLANTING&year=&farmId=` |
+| Nhắc việc | `GET /reminders?farmId=` |
 
 Hành động vòng đời được mô hình hóa thành **tài nguyên con** (`/termination`) thay vì
 `PATCH status`, vì chúng có dữ liệu riêng (ngày, lý do) và quy tắc riêng.
@@ -333,7 +355,7 @@ tối đa 200.
 
 | Vấn đề | Giải pháp |
 |---|---|
-| N+1 trên `Plot → Planting → Season → Harvest` | `@EntityGraph` trên truy vấn danh sách; báo cáo dùng **JPQL aggregate + DTO projection** (một câu SQL `GROUP BY`, không load entity); `hibernate.default_batch_fetch_size=50` |
+| N+1 trên `Plot → Planting → Season → Harvest` | `@EntityGraph` trên truy vấn danh sách; báo cáo dùng **JPQL aggregate + DTO projection** (`GROUP BY`, không load entity); `hibernate.default_batch_fetch_size=50` |
 | Lazy loading rò rỉ ra tầng web | `spring.jpa.open-in-view=false`; controller chỉ nhận `View` record đã map xong trong transaction |
 | Hiệu năng truy vấn | PostgreSQL **không tự tạo index cho FK** → tạo index cho mọi FK; `UNIQUE (planting_id, year)`; partial index `WHERE status <> 'TERMINATED'` cho lứa đang sống |
 | Cập nhật đồng thời | `@Version` (optimistic locking) trên `Planting`, `Season` → 409 khi xung đột |
@@ -342,6 +364,8 @@ tối đa 200.
 | Schema | Flyway migration có version + `ddl-auto=validate` |
 | Transaction | `@Transactional` ở application service; `readOnly = true` cho truy vấn |
 | Tổng hợp niên vụ (chi phí, sản lượng, doanh thu) | Hai truy vấn `GROUP BY` cho *cả danh sách* niên vụ (một cho `activity`, một cho `harvest`) rồi ghép trong service. Gộp hai bảng vào một câu sẽ nhân chéo dòng và cộng sai tổng |
+| Báo cáo lãi/lỗ toàn nông trại | Đúng **3 truy vấn** bất kể số lô, lứa hay năm: 1 lấy hồ sơ lứa trồng (BR-14), 2 câu `GROUP BY (lứa, niên vụ)` cho chi phí và thu hoạch. Gom nhóm theo `CROP`/`PLOT`/`PLANTING` và tính luỹ kế làm trong service trên dữ liệu đã tổng hợp — không quay lại DB |
+| Nhắc việc | Đúng **3 truy vấn**: 1 lấy lứa đang canh tác, 1 `MAX(ngày) GROUP BY (lứa, loại việc)`, 1 `MAX(ngày thu hoạch) GROUP BY lứa`. Luật chạy trên bộ nhớ, không luật nào tự truy vấn |
 | Danh sách dài | Phân trang cho nhật ký hoạt động và thu hoạch, qua kiểu `Page`/`PageRequest` của ứng dụng (ADR-8) |
 | Kiểm thử ngày tháng | Inject `Clock` → test tái lập được |
 | Giữ kiến trúc sạch theo thời gian | ArchUnit: `domain` không import `web`/`infrastructure`/Spring MVC; không có chu trình giữa module |
@@ -350,7 +374,7 @@ tối đa 200.
 
 | Tầng | Công cụ | Mục tiêu |
 |---|---|---|
-| Domain | JUnit 5 thuần, không Spring | Bất biến BR-02 → BR-09, BR-12 và chính sách niên vụ |
+| Domain | JUnit 5 thuần, không Spring | Bất biến BR-02 → BR-09, BR-12; chính sách niên vụ và luật nhắc việc (`CareRule` nhận `CareContext` dựng sẵn nên test không cần DB) |
 | Application | JUnit 5 + Mockito mock **output port** | Điều phối use case — lợi ích trực tiếp của DIP |
 | Web | `@WebMvcTest` + mock **input port** | Validation, mã HTTP, định dạng `ProblemDetail` |
 | Persistence | `@DataJpaTest` + Testcontainers PostgreSQL | Truy vấn, `@EntityGraph`, migration |
@@ -408,6 +432,21 @@ tối đa 200.
    trạng thái cuối). Muốn sửa trạng thái thì sửa tường minh qua lứa trồng.
 10. **Giới hạn phạm vi đã biết:** chi phí dùng chung cho cả lô xen canh (vd. tưới cả lô)
     hiện ghi vào từng lứa trồng; phân bổ theo tỷ lệ diện tích/số cây để ở giai đoạn sau.
+    Báo cáo đánh cờ `sharedPlot` cho nhóm có lô trồng xen để người đọc biết số theo diện
+    tích chỉ là ước lượng (BR-16).
+11. **Báo cáo là read model riêng, không tái dùng `SeasonService`.** `SeasonService` trả
+    view của *một* lứa trồng và đã đủ cho màn hình niên vụ; báo cáo cần cắt theo cây, lô,
+    năm trên *toàn* nông trại. Dùng lại sẽ kéo theo N+1 (mỗi lứa một lần gọi) và ép
+    `SeasonView` gánh thêm trường chỉ báo cáo mới cần. `analytics` khai báo
+    `ProfitLossQueryPort` riêng, adapter trả thẳng DTO tổng hợp — *đọc* và *ghi* có hình
+    dạng dữ liệu khác nhau thì tách mô hình (CQRS nhẹ, không event sourcing).
+    *Đánh đổi:* hai chỗ cùng biết cách cộng tiền. Giữ đúng bằng test đối chiếu tổng của
+    báo cáo với tổng của `SeasonView`.
+12. **Nhắc việc không có trạng thái.** Không có bảng, không có nút "đã làm" / "bỏ qua":
+    mỗi lần gọi, `CareReminderService` tính lại từ nhật ký. Lời nhắc tưới biến mất khi có
+    bản ghi tưới — mà nhà nông vẫn phải ghi nhật ký, nên thêm nút "đã làm" chỉ tạo ra hai
+    nguồn sự thật và một bảng phải dọn rác. *Đánh đổi:* chưa hoãn hay tắt được một lời
+    nhắc cụ thể. *Xem lại khi:* người dùng phàn nàn về lời nhắc không liên quan lặp lại.
 
 ---
 
