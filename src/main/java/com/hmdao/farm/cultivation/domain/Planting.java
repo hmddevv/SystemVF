@@ -112,6 +112,23 @@ public class Planting extends BaseEntity {
         this.endNote = note == null || note.isBlank() ? null : note.strip();
     }
 
+    /**
+     * Ngày được phép ghi nhật ký hoặc thu hoạch cho lứa trồng này (BR-07): không trước ngày
+     * trồng, không ở tương lai, và không sau ngày cưa bỏ nếu lứa đã kết thúc.
+     *
+     * <p>Lứa đã kết thúc vẫn ghi bổ sung được cho khoảng thời gian nó còn sống — nhà nông
+     * thường nhập liệu muộn hơn thực tế.
+     */
+    public void requireRecordable(LocalDate date, LocalDate today) {
+        require(date != null, "BR-07", "Ngày ghi nhận không được để trống.");
+        require(!date.isBefore(plantingDate), "BR-07",
+                "Ngày %s trước ngày trồng %s của lứa trồng.".formatted(date, plantingDate));
+        require(!date.isAfter(today), "BR-07",
+                "Ngày %s ở tương lai (hôm nay là %s).".formatted(date, today));
+        require(endDate == null || !date.isAfter(endDate), "BR-07",
+                "Lứa trồng đã kết thúc ngày %s nên không ghi nhận được cho ngày %s.".formatted(endDate, date));
+    }
+
     public boolean isActive() {
         return status != PlantingStatus.TERMINATED;
     }

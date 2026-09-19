@@ -11,11 +11,13 @@ import com.hmdao.farm.cultivation.application.port.in.PlantCropUseCase;
 import com.hmdao.farm.cultivation.application.port.in.PlantingLifecycleUseCase;
 import com.hmdao.farm.cultivation.application.port.in.PlantingQueryUseCase;
 import com.hmdao.farm.cultivation.application.port.out.PlantingRepository;
+import com.hmdao.farm.cultivation.application.port.out.SeasonRepository;
 import com.hmdao.farm.cultivation.domain.Planting;
 import com.hmdao.farm.cultivation.domain.PlantingStatus;
 import com.hmdao.farm.identity.application.port.CurrentUserProvider;
 import com.hmdao.farm.land.application.port.out.PlotRepository;
 import com.hmdao.farm.land.domain.Plot;
+import com.hmdao.farm.shared.domain.ResourceConflictException;
 import com.hmdao.farm.shared.domain.ResourceNotFoundException;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -29,14 +31,16 @@ class PlantingService implements PlantCropUseCase, PlantingLifecycleUseCase, Cor
         PlantingQueryUseCase {
 
     private final PlantingRepository plantings;
+    private final SeasonRepository seasons;
     private final PlotRepository plots;
     private final CropRepository crops;
     private final CurrentUserProvider currentUser;
     private final Clock clock;
 
-    PlantingService(PlantingRepository plantings, PlotRepository plots, CropRepository crops,
-            CurrentUserProvider currentUser, Clock clock) {
+    PlantingService(PlantingRepository plantings, SeasonRepository seasons, PlotRepository plots,
+            CropRepository crops, CurrentUserProvider currentUser, Clock clock) {
         this.plantings = plantings;
+        this.seasons = seasons;
         this.plots = plots;
         this.crops = crops;
         this.currentUser = currentUser;
@@ -76,8 +80,14 @@ class PlantingService implements PlantCropUseCase, PlantingLifecycleUseCase, Cor
 
     @Override
     public void delete(Long plantingId) {
-        // M3 bổ sung: chặn xóa khi lứa trồng đã có niên vụ (BR-10).
-        plantings.delete(loadOwned(plantingId));
+        Planting planting = loadOwned(plantingId);
+        long seasonCount = seasons.countByPlantingId(plantingId);
+        if (seasonCount > 0) {
+            throw new ResourceConflictException("BR-10",
+                    "Lứa trồng %s đã có %d niên vụ với nhật ký canh tác. Muốn bỏ lứa trồng thật thì dùng /termination."
+                            .formatted(planting.getCrop().getDisplayName(), seasonCount));
+        }
+        plantings.delete(planting);
     }
 
     @Override

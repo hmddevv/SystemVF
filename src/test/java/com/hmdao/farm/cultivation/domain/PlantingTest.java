@@ -126,6 +126,46 @@ class PlantingTest {
     }
 
     @Nested
+    class Recording {
+
+        @Test
+        void br07_dateBeforePlantingIsRejected() {
+            Planting planting = pepperPlanted(true);
+
+            assertThatThrownBy(() -> planting.requireRecordable(LocalDate.of(2019, 6, 30), TODAY))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasFieldOrPropertyWithValue("ruleCode", "BR-07");
+        }
+
+        @Test
+        void br07_futureDateIsRejected() {
+            Planting planting = pepperPlanted(true);
+
+            assertThatThrownBy(() -> planting.requireRecordable(TODAY.plusDays(1), TODAY))
+                    .hasFieldOrPropertyWithValue("ruleCode", "BR-07");
+        }
+
+        @Test
+        void br07_nothingIsRecordedAfterTermination() {
+            Planting planting = pepperPlanted(true);
+            planting.terminate(LocalDate.of(2026, 8, 20), EndReason.PEST_DISEASE, null, TODAY);
+
+            assertThatThrownBy(() -> planting.requireRecordable(LocalDate.of(2026, 8, 21), TODAY))
+                    .hasFieldOrPropertyWithValue("ruleCode", "BR-07")
+                    .hasMessageContaining("2026-08-20");
+        }
+
+        @Test
+        void terminatedPlantingStillAcceptsEntriesFromWhenItWasAlive() {
+            Planting planting = pepperPlanted(true);
+            planting.terminate(LocalDate.of(2026, 8, 20), EndReason.PEST_DISEASE, null, TODAY);
+
+            // Nhà nông thường nhập liệu muộn hơn thực tế — chặn hẳn sẽ mất dữ liệu có thật.
+            planting.requireRecordable(LocalDate.of(2026, 8, 20), TODAY);
+        }
+    }
+
+    @Nested
     class Correction {
 
         @Test

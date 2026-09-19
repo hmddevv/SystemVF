@@ -151,6 +151,7 @@ erDiagram
     string type
     date activity_date
     decimal cost
+    string note
   }
   HARVEST {
     long id PK
@@ -162,9 +163,14 @@ erDiagram
 ```
 
 > **Ghi chú phạm vi:** Tầng `SEASON` (niên vụ) cho phép so sánh năng suất qua từng năm
-> — rất giá trị với cây lâu năm. Nếu cần MVP gọn hơn, có thể tạm bỏ `SEASON` và gắn
-> thẳng `ACTIVITY`/`HARVEST` vào `PLANTING` kèm cột ngày, rồi nhóm theo năm bằng truy
-> vấn. Đây là một quyết định cân bằng giữa độ chính xác của mô hình và tốc độ ship.
+> — rất giá trị với cây lâu năm. Phương án gọn hơn là bỏ `SEASON` rồi nhóm `ACTIVITY`/
+> `HARVEST` theo `YEAR(ngày)`, nhưng niên vụ cà phê chạy từ tháng 2 năm này tới tháng 1
+> năm sau nên cách nhóm đó cắt đôi vụ thu hoạch và ghép sai chi phí với doanh thu.
+>
+> **Đã chốt ở M3:** giữ `SEASON`, và niên vụ là **dữ liệu dẫn xuất** — người dùng ghi
+> hoạt động/thu hoạch vào *lứa trồng* kèm ngày, hệ thống tự tính niên vụ chứa ngày đó từ
+> `CROP.season_start_month` và tạo nếu chưa có. API không có `POST`/`PUT` niên vụ.
+> Xem BR-05a và ADR-7 trong `architecture.md`.
 
 ---
 
@@ -221,11 +227,12 @@ erDiagram
 |---|---|---|
 | id | long | Khóa chính |
 | planting_id | long | FK → PLANTING |
-| year | int | Năm sản xuất |
-| start_date | date | Bắt đầu niên vụ |
-| end_date | date | Kết thúc niên vụ |
+| year | int | Năm **bắt đầu** niên vụ; duy nhất trong một lứa trồng (BR-05). Vụ 2/2025–1/2026 là `year = 2025` |
+| start_date | date | Bắt đầu niên vụ; không trước ngày trồng |
+| end_date | date | Kết thúc niên vụ; `null` = đang diễn ra (cây ngắn ngày) |
 
 > Cây ngắn ngày: một lứa trồng ≈ một niên vụ. Cây lâu năm: một lứa trồng có nhiều niên vụ.
+> Bản ghi do hệ thống sinh ra khi có hoạt động/thu hoạch đầu tiên rơi vào niên vụ đó.
 
 ### ACTIVITY — hoạt động canh tác
 | Cột | Kiểu | Ghi chú |
@@ -233,16 +240,17 @@ erDiagram
 | id | long | Khóa chính |
 | season_id | long | FK → SEASON |
 | type | enum | `WATERING`, `FERTILIZING`, `SPRAYING`, `WEEDING`, `PRUNING`, `OTHER` |
-| activity_date | date | Ngày thực hiện |
-| cost | decimal | Chi phí (dùng `BigDecimal`, không dùng `double` cho tiền) |
+| activity_date | date | Ngày thực hiện; quyết định niên vụ của bản ghi (BR-05a) |
+| cost | decimal | Chi phí (dùng `BigDecimal`, không dùng `double` cho tiền); bỏ trống = 0 |
+| note | string | Ghi chú; **bắt buộc** khi `type = OTHER`, nếu không dòng nhật ký mất ý nghĩa (BR-12) |
 
 ### HARVEST — thu hoạch
 | Cột | Kiểu | Ghi chú |
 |---|---|---|
 | id | long | Khóa chính |
 | season_id | long | FK → SEASON |
-| harvest_date | date | Ngày thu hoạch |
-| quantity_kg | double | Sản lượng (kg) |
+| harvest_date | date | Ngày thu hoạch; quyết định niên vụ của bản ghi (BR-05a) |
+| quantity_kg | double | Sản lượng (kg), phải > 0 |
 | revenue | decimal | Doanh thu (`BigDecimal`) |
 
 ---

@@ -285,14 +285,15 @@ Mỗi quy tắc có mã để truy vết tới test case.
 | BR-02 | Ngày trồng không ở tương lai (theo giờ Việt Nam); số cây > 0. Lứa trồng mới là GROWING, hoặc PRODUCING khi số hóa vườn đã cho thu hoạch (`alreadyProducing`) | `Planting` | 422 |
 | BR-03 | Chỉ chuyển GROWING→PRODUCING, GROWING/PRODUCING→TERMINATED; TERMINATED là trạng thái cuối | `PlantingStatus` | 422 |
 | BR-04 | Kết thúc lứa trồng bắt buộc có lý do; ngày kết thúc ≥ ngày trồng và ≤ hôm nay; ghi chú tùy chọn. Sửa ngày trồng không được vượt ngày kết thúc | `Planting.terminate()` / `correct()` | 422 |
-| BR-05 | Mỗi lứa trồng có tối đa một niên vụ cho mỗi năm; cây ngắn ngày tối đa một niên vụ | `SeasonPolicy` + DB `UNIQUE` | 409 / 422 |
-| BR-05a | Niên vụ bắt đầu theo `CROP.season_start_month` (1–12). Khi ghi hoạt động/thu hoạch, hệ thống tự gán vào niên vụ chứa ngày đó; chưa có thì tự tạo | `SeasonAssigner` | — |
-| BR-06 | Niên vụ: ngày bắt đầu ≤ ngày kết thúc, không trước ngày trồng, không sau ngày cưa bỏ | `Season` | 422 |
-| BR-07 | Hoạt động/thu hoạch phải có ngày nằm trong niên vụ và không sau ngày kết thúc lứa trồng | `Season` | 422 |
-| BR-08 | Chi phí ≥ 0; sản lượng > 0 kg; doanh thu ≥ 0; tiền là `BigDecimal` `NUMERIC(15,2)` | DTO + DB `CHECK` | 400 |
-| BR-09 | Lần thu hoạch đầu tiên của lứa đang GROWING tự động chuyển sang PRODUCING | `HarvestService` | — |
-| BR-10 | Không xóa nông trại/lô/cây trồng/lứa trồng/niên vụ còn dữ liệu con (409); bản ghi rỗng tạo nhầm được xóa. Lứa trồng muốn "bỏ" thì dùng `terminate()`. Hoạt động và thu hoạch được xóa thật để sửa nhập sai | Service + DB `FK RESTRICT` | 409 |
+| BR-05 | Mỗi lứa trồng có tối đa một niên vụ cho mỗi năm; cây ngắn ngày chỉ có đúng một niên vụ | `SeasonPolicy` + DB `UNIQUE (planting_id, year)` | 409 |
+| BR-05a | Niên vụ **do hệ thống sinh ra, không nhập tay**. Khi ghi hoạt động/thu hoạch, `SeasonPolicy` tính cửa sổ niên vụ chứa ngày đó rồi `SeasonAssigner` lấy niên vụ tương ứng, chưa có thì tạo. Cây lâu năm: cửa sổ `[ngày 1 của season_start_month, +1 năm − 1 ngày]`, cận dưới cắt theo ngày trồng. Cây ngắn ngày (`season_start_month` NULL): đúng một niên vụ, bắt đầu từ ngày trồng, `end_date` NULL nghĩa là đang diễn ra. Sửa ngày một hoạt động/thu hoạch sang cửa sổ khác thì bản ghi tự chuyển niên vụ | `SeasonPolicy` / `SeasonAssigner` | — |
+| BR-06 | Niên vụ: ngày bắt đầu ≥ ngày trồng; ngày kết thúc để trống (đang diễn ra) hoặc ≥ ngày bắt đầu. Cận trên so với ngày cưa bỏ do BR-07 canh ở tầng bản ghi, vì `CHECK` không nhìn được sang bảng khác | `Season` + DB `CHECK` | 422 |
+| BR-07 | Ngày ghi hoạt động/thu hoạch: ≥ ngày trồng, ≤ hôm nay (giờ Việt Nam), và ≤ ngày cưa bỏ nếu lứa đã kết thúc. Nằm trong niên vụ là hệ quả — niên vụ được suy ra từ chính ngày đó (BR-05a) | `Planting.requireRecordable()` | 422 |
+| BR-08 | Chi phí ≥ 0, bỏ trống nghĩa là 0 (tự làm, không tốn chi phí); sản lượng > 0 kg; doanh thu ≥ 0; tiền là `BigDecimal` `NUMERIC(15,2)` | DTO + `Activity`/`Harvest` + DB `CHECK` | 400 / 422 |
+| BR-09 | Lần thu hoạch đầu tiên của lứa đang GROWING tự động chuyển sang PRODUCING. Xóa hoặc sửa lại lần thu hoạch đó **không** đưa trạng thái về GROWING (xem ADR-9) | `HarvestService` | — |
+| BR-10 | Không xóa nông trại/lô/cây trồng/lứa trồng/niên vụ còn dữ liệu con (409); bản ghi rỗng tạo nhầm được xóa. Lứa trồng muốn "bỏ" thì dùng `terminate()`. Hoạt động và thu hoạch được xóa thật để sửa nhập sai; niên vụ rỗng còn lại sau đó cũng xóa được | Service + DB `FK RESTRICT` | 409 |
 | BR-11 | Dữ liệu giới hạn theo chủ sở hữu; tài nguyên của người khác trả 404 để không lộ sự tồn tại | Truy vấn `findOwned…` | 404 |
+| BR-12 | Hoạt động loại `OTHER` bắt buộc có ghi chú — nếu không, nhật ký mất luôn ý nghĩa của dòng đó | `Activity` | 422 |
 
 Validation hai lớp: **cú pháp** (Bean Validation trên request DTO → 400) và **ngữ nghĩa**
 (bất biến domain → 422). Ràng buộc DB (`CHECK`, `UNIQUE`, `FK`) là lớp phòng thủ cuối.
@@ -310,14 +311,21 @@ Tiền tố `/api/v1`. Tài liệu tương tác tại `/swagger-ui.html`.
 | Cây trồng | `GET POST /crops` · `GET PUT DELETE /crops/{id}` |
 | Lứa trồng | `GET POST /plots/{plotId}/plantings?activeOnly=true` · `GET PUT DELETE /plantings/{id}` (PUT/DELETE chỉ để sửa nhập sai) |
 | Vòng đời | `POST /plantings/{id}/production-start` · `POST /plantings/{id}/termination` |
-| Niên vụ | `GET POST /plantings/{id}/seasons` · `GET PUT DELETE /seasons/{id}` |
-| Hoạt động | `GET POST /seasons/{id}/activities` (phân trang) · `PUT DELETE /activities/{id}` |
-| Thu hoạch | `GET POST /seasons/{id}/harvests` · `PUT DELETE /harvests/{id}` |
+| Niên vụ | `GET /plantings/{id}/seasons` · `GET DELETE /seasons/{id}` — không có POST/PUT: niên vụ là dữ liệu dẫn xuất (ADR-7) |
+| Hoạt động | `POST /plantings/{id}/activities` (tự gán niên vụ) · `GET /seasons/{id}/activities` (phân trang) · `GET PUT DELETE /activities/{id}` |
+| Thu hoạch | `POST /plantings/{id}/harvests` (tự gán niên vụ) · `GET /seasons/{id}/harvests` (phân trang) · `GET PUT DELETE /harvests/{id}` |
 | Báo cáo (P2) | `GET /reports/profit-loss?groupBy=CROP\|PLOT\|PLANTING&year=&farmId=` |
 | Nhắc việc (P2) | `GET /reminders?farmId=` |
 
 Hành động vòng đời được mô hình hóa thành **tài nguyên con** (`/termination`) thay vì
 `PATCH status`, vì chúng có dữ liệu riêng (ngày, lý do) và quy tắc riêng.
+
+Hoạt động và thu hoạch **ghi vào lứa trồng, đọc theo niên vụ**: người dùng chỉ biết "cây nào,
+ngày nào", còn niên vụ là chuyện của hệ thống (BR-05a). Ghi vào `/seasons/{id}/…` sẽ buộc
+client tự chọn niên vụ — đúng thứ mà BR-05a sinh ra để tránh.
+
+Phân trang trả về `{ content, page, size, totalElements, totalPages }`; mặc định `size=20`,
+tối đa 200.
 
 ---
 
@@ -333,7 +341,8 @@ Hành động vòng đời được mô hình hóa thành **tài nguyên con** (
 | Tiền tệ | `BigDecimal` + `NUMERIC(15,2)`, không dùng `double` |
 | Schema | Flyway migration có version + `ddl-auto=validate` |
 | Transaction | `@Transactional` ở application service; `readOnly = true` cho truy vấn |
-| Danh sách dài | Phân trang `Pageable` cho nhật ký hoạt động và thu hoạch |
+| Tổng hợp niên vụ (chi phí, sản lượng, doanh thu) | Hai truy vấn `GROUP BY` cho *cả danh sách* niên vụ (một cho `activity`, một cho `harvest`) rồi ghép trong service. Gộp hai bảng vào một câu sẽ nhân chéo dòng và cộng sai tổng |
+| Danh sách dài | Phân trang cho nhật ký hoạt động và thu hoạch, qua kiểu `Page`/`PageRequest` của ứng dụng (ADR-8) |
 | Kiểm thử ngày tháng | Inject `Clock` → test tái lập được |
 | Giữ kiến trúc sạch theo thời gian | ArchUnit: `domain` không import `web`/`infrastructure`/Spring MVC; không có chu trình giữa module |
 
@@ -341,7 +350,7 @@ Hành động vòng đời được mô hình hóa thành **tài nguyên con** (
 
 | Tầng | Công cụ | Mục tiêu |
 |---|---|---|
-| Domain | JUnit 5 thuần, không Spring | Bất biến BR-02 → BR-09 |
+| Domain | JUnit 5 thuần, không Spring | Bất biến BR-02 → BR-09, BR-12 và chính sách niên vụ |
 | Application | JUnit 5 + Mockito mock **output port** | Điều phối use case — lợi ích trực tiếp của DIP |
 | Web | `@WebMvcTest` + mock **input port** | Validation, mã HTTP, định dạng `ProblemDetail` |
 | Persistence | `@DataJpaTest` + Testcontainers PostgreSQL | Truy vấn, `@EntityGraph`, migration |
@@ -380,8 +389,25 @@ Hành động vòng đời được mô hình hóa thành **tài nguyên con** (
    mọi truy vấn phải nhớ lọc, dễ lọt dữ liệu vào báo cáo, vướng `UNIQUE` tên lô — trong khi
    trạng thái `TERMINATED` đã giữ được lịch sử cho lứa trồng. Chi tiết theo loại dữ liệu ở
    BR-10.
-7. **Giới hạn phạm vi đã biết:** chi phí dùng chung cho cả lô xen canh (vd. tưới cả lô)
-   hiện ghi vào từng lứa trồng; phân bổ theo tỷ lệ diện tích/số cây để ở giai đoạn sau.
+7. **Niên vụ là dữ liệu dẫn xuất, không phải dữ liệu nhập.** API không có `POST`/`PUT`
+   cho niên vụ: `SeasonPolicy` tính cửa sổ niên vụ từ ngày ghi nhận + `CROP.season_start_month`,
+   `SeasonAssigner` tạo bản ghi khi cần (BR-05a). *Vì sao:* nếu người dùng tự nhập ngày bắt
+   đầu/kết thúc thì các niên vụ có thể chồng lấn hoặc hở, và câu hỏi "hoạt động ngày 15/1/2026
+   thuộc niên vụ nào" trở nên không có lời giải duy nhất — trong khi chính câu hỏi đó là thứ
+   BR-05a phải trả lời tự động. Suy ra từ chính sách thì BR-06 đúng theo cấu trúc, không cần
+   kiểm tra chồng lấn. *Đánh đổi:* nhà nông không tự nắn được ranh giới niên vụ; khi cần, chỉnh
+   `season_start_month` trong danh mục cây trồng. *Xem lại khi:* xuất hiện nhu cầu niên vụ dài
+   ngắn khác nhau trong cùng một loại cây.
+8. **Kiểu phân trang riêng của ứng dụng** (`shared.application.Page`, `PageRequest`) thay vì
+   `Pageable`/`Page` của Spring Data. ArchUnit cấm tầng `application` biết `org.springframework.data`;
+   nếu để lọt, input port và use case sẽ dính chặt vào Spring Data và mất ý nghĩa của DIP. Adapter
+   persistence chuyển đổi hai chiều ngay tại biên.
+9. **Thu hoạch đầu tiên đẩy trạng thái sang PRODUCING, nhưng xóa đi thì không lùi lại.**
+   Lùi trạng thái tự động là hiệu ứng phụ ngầm: xóa một dòng nhập nhầm có thể âm thầm đổi
+   trạng thái lứa trồng, và nếu lứa đã được cưa bỏ thì việc lùi còn vi phạm BR-03 (TERMINATED là
+   trạng thái cuối). Muốn sửa trạng thái thì sửa tường minh qua lứa trồng.
+10. **Giới hạn phạm vi đã biết:** chi phí dùng chung cho cả lô xen canh (vd. tưới cả lô)
+    hiện ghi vào từng lứa trồng; phân bổ theo tỷ lệ diện tích/số cây để ở giai đoạn sau.
 
 ---
 
