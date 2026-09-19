@@ -19,7 +19,7 @@ class HarvestTest {
     private final Crop coffee = Crop.create("Cà phê", "Robusta", true, 2);
     private final Planting planting = Planting.plant(plot, coffee, LocalDate.of(2016, 6, 15), 1100, true, TODAY);
     private final Season season = Season.open(planting,
-            SeasonPolicy.windowContaining(planting, LocalDate.of(2025, 11, 28)));
+            new PerennialSeasonPolicy().windowContaining(planting, LocalDate.of(2025, 11, 28)));
 
     @Test
     void recordsQuantityAndRevenue() {

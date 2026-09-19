@@ -20,7 +20,8 @@ import com.hmdao.farm.cultivation.domain.Activity;
 import com.hmdao.farm.cultivation.domain.ActivityType;
 import com.hmdao.farm.cultivation.domain.Planting;
 import com.hmdao.farm.cultivation.domain.Season;
-import com.hmdao.farm.cultivation.domain.SeasonPolicy;
+import com.hmdao.farm.cultivation.domain.AnnualSeasonPolicy;
+import com.hmdao.farm.cultivation.domain.PerennialSeasonPolicy;
 import com.hmdao.farm.land.domain.Farm;
 import com.hmdao.farm.land.domain.Plot;
 import com.hmdao.farm.shared.domain.BusinessRuleViolationException;
@@ -29,6 +30,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +49,7 @@ class ActivityServiceTest {
     private final CultivationAccess access =
             new CultivationAccess(plantings, seasons, activities, harvests, () -> OWNER);
     private final ActivityService service =
-            new ActivityService(activities, new SeasonAssigner(seasons), access, clock);
+            new ActivityService(activities, new SeasonAssigner(seasons, List.of(new PerennialSeasonPolicy(), new AnnualSeasonPolicy())), access, clock);
 
     private final Plot plot = Plot.create(Farm.create(OWNER, "Nông trại Cư M'gar", null), "Lô A2", 15_000, null);
     private final Crop coffee = Crop.create("Cà phê", "Robusta", true, 2);
@@ -77,7 +79,7 @@ class ActivityServiceTest {
     void br05a_reusesTheSeasonAlreadyOpenedForThatYear() {
         ownsPlanting();
         Season existing = Season.open(planting,
-                SeasonPolicy.windowContaining(planting, LocalDate.of(2025, 12, 20)));
+                new PerennialSeasonPolicy().windowContaining(planting, LocalDate.of(2025, 12, 20)));
         when(seasons.findByPlantingIdAndYear(any(), anyInt())).thenReturn(Optional.of(existing));
 
         service.log(5L, new LogActivityCommand(ActivityType.WATERING, LocalDate.of(2025, 12, 20), null, null));
@@ -99,7 +101,7 @@ class ActivityServiceTest {
     @Test
     void correctionMovesTheEntryWhenTheNewDateBelongsToAnotherSeason() {
         Season season2025 = Season.open(planting,
-                SeasonPolicy.windowContaining(planting, LocalDate.of(2025, 12, 20)));
+                new PerennialSeasonPolicy().windowContaining(planting, LocalDate.of(2025, 12, 20)));
         Activity activity = Activity.log(season2025, ActivityType.SPRAYING, LocalDate.of(2025, 12, 20),
                 new BigDecimal("500000"), null);
         when(activities.findByIdAndSeasonPlantingPlotFarmOwnerId(31L, OWNER)).thenReturn(Optional.of(activity));

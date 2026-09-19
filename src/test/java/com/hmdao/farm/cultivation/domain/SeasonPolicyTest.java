@@ -24,8 +24,19 @@ class SeasonPolicyTest {
     private final Crop coffee = Crop.create("Cà phê", "Robusta", true, 2);
     private final Crop maize = Crop.create("Ngô", "LVN10", false, null);
 
+    private final SeasonPolicy perennial = new PerennialSeasonPolicy();
+    private final SeasonPolicy annual = new AnnualSeasonPolicy();
+
     private Planting planting(Crop crop, LocalDate plantingDate) {
         return Planting.plant(plot, crop, plantingDate, 1100, true, TODAY);
+    }
+
+    @Test
+    void eachPolicyClaimsExactlyOneKindOfCrop() {
+        assertThat(perennial.appliesTo(coffee)).isTrue();
+        assertThat(perennial.appliesTo(maize)).isFalse();
+        assertThat(annual.appliesTo(maize)).isTrue();
+        assertThat(annual.appliesTo(coffee)).isFalse();
     }
 
     @Nested
@@ -46,12 +57,12 @@ class SeasonPolicyTest {
                 "2025-01-31, 2024"
         })
         void assignsSeasonByProductionCycleNotCalendarYear(LocalDate date, int expectedYear) {
-            assertThat(SeasonPolicy.windowContaining(coffeePlanting, date).year()).isEqualTo(expectedYear);
+            assertThat(perennial.windowContaining(coffeePlanting, date).year()).isEqualTo(expectedYear);
         }
 
         @Test
         void windowSpansOneYearStartingAtTheCropSeasonMonth() {
-            SeasonWindow window = SeasonPolicy.windowContaining(coffeePlanting, LocalDate.of(2026, 1, 15));
+            SeasonWindow window = perennial.windowContaining(coffeePlanting, LocalDate.of(2026, 1, 15));
 
             assertThat(window.startDate()).isEqualTo(LocalDate.of(2025, 2, 1));
             assertThat(window.endDate()).isEqualTo(LocalDate.of(2026, 1, 31));
@@ -63,7 +74,7 @@ class SeasonPolicyTest {
         @Test
         void br06_firstSeasonStartsAtPlantingDateNotAtTheStartOfTheCycle() {
             // Trồng giữa vụ ngày 15/6/2016: niên vụ 2016 không thể bắt đầu từ 1/2/2016.
-            SeasonWindow window = SeasonPolicy.windowContaining(coffeePlanting, LocalDate.of(2016, 8, 1));
+            SeasonWindow window = perennial.windowContaining(coffeePlanting, LocalDate.of(2016, 8, 1));
 
             assertThat(window.year()).isEqualTo(2016);
             assertThat(window.startDate()).isEqualTo(LocalDate.of(2016, 6, 15));
@@ -76,7 +87,7 @@ class SeasonPolicyTest {
             Crop durian = Crop.create("Sầu riêng", "Ri6", true, 10);
             Planting durianPlanting = planting(durian, LocalDate.of(2020, 5, 20));
 
-            SeasonWindow window = SeasonPolicy.windowContaining(durianPlanting, LocalDate.of(2025, 8, 15));
+            SeasonWindow window = perennial.windowContaining(durianPlanting, LocalDate.of(2025, 8, 15));
 
             assertThat(window.year()).isEqualTo(2024);
             assertThat(window.startDate()).isEqualTo(LocalDate.of(2024, 10, 1));
@@ -91,8 +102,8 @@ class SeasonPolicyTest {
 
         @Test
         void br05_hasExactlyOneOpenEndedSeason() {
-            SeasonWindow first = SeasonPolicy.windowContaining(maizePlanting, LocalDate.of(2025, 4, 10));
-            SeasonWindow later = SeasonPolicy.windowContaining(maizePlanting, LocalDate.of(2026, 9, 1));
+            SeasonWindow first = annual.windowContaining(maizePlanting, LocalDate.of(2025, 4, 10));
+            SeasonWindow later = annual.windowContaining(maizePlanting, LocalDate.of(2026, 9, 1));
 
             assertThat(first).isEqualTo(later);
             assertThat(first.year()).isEqualTo(2025);
@@ -102,7 +113,7 @@ class SeasonPolicyTest {
 
         @Test
         void openEndedWindowHasNoUpperBound() {
-            SeasonWindow window = SeasonPolicy.windowContaining(maizePlanting, LocalDate.of(2025, 4, 10));
+            SeasonWindow window = annual.windowContaining(maizePlanting, LocalDate.of(2025, 4, 10));
 
             assertThat(window.contains(LocalDate.of(2030, 1, 1))).isTrue();
             assertThat(window.contains(LocalDate.of(2025, 4, 9))).isFalse();
@@ -116,7 +127,7 @@ class SeasonPolicyTest {
         void labelShowsBothYearsWhenTheSeasonCrossesNewYear() {
             Planting coffeePlanting = planting(coffee, LocalDate.of(2016, 6, 15));
             Season season = Season.open(coffeePlanting,
-                    SeasonPolicy.windowContaining(coffeePlanting, LocalDate.of(2025, 11, 28)));
+                    perennial.windowContaining(coffeePlanting, LocalDate.of(2025, 11, 28)));
 
             assertThat(season.getLabel()).isEqualTo("2025/2026");
             assertThat(season.getYear()).isEqualTo(2025);
@@ -126,7 +137,7 @@ class SeasonPolicyTest {
         void labelIsASingleYearForAnOpenEndedSeason() {
             Planting maizePlanting = planting(maize, LocalDate.of(2025, 4, 10));
             Season season = Season.open(maizePlanting,
-                    SeasonPolicy.windowContaining(maizePlanting, LocalDate.of(2025, 6, 1)));
+                    annual.windowContaining(maizePlanting, LocalDate.of(2025, 6, 1)));
 
             assertThat(season.getLabel()).isEqualTo("2025");
             assertThat(season.getEndDate()).isNull();

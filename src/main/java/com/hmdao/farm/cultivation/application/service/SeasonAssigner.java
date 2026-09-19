@@ -1,11 +1,13 @@
 package com.hmdao.farm.cultivation.application.service;
 
+import com.hmdao.farm.catalog.domain.Crop;
 import com.hmdao.farm.cultivation.application.port.out.SeasonRepository;
 import com.hmdao.farm.cultivation.domain.Planting;
 import com.hmdao.farm.cultivation.domain.Season;
 import com.hmdao.farm.cultivation.domain.SeasonPolicy;
 import com.hmdao.farm.cultivation.domain.SeasonWindow;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,14 +21,24 @@ import org.springframework.stereotype.Component;
 class SeasonAssigner {
 
     private final SeasonRepository seasons;
+    private final List<SeasonPolicy> policies;
 
-    SeasonAssigner(SeasonRepository seasons) {
+    SeasonAssigner(SeasonRepository seasons, List<SeasonPolicy> policies) {
         this.seasons = seasons;
+        this.policies = List.copyOf(policies);
     }
 
     Season resolve(Planting planting, LocalDate date) {
-        SeasonWindow window = SeasonPolicy.windowContaining(planting, date);
+        SeasonWindow window = policyFor(planting.getCrop()).windowContaining(planting, date);
         return seasons.findByPlantingIdAndYear(planting.getId(), window.year())
                 .orElseGet(() -> seasons.save(Season.open(planting, window)));
+    }
+
+    private SeasonPolicy policyFor(Crop crop) {
+        return policies.stream()
+                .filter(policy -> policy.appliesTo(crop))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Không có chính sách niên vụ nào áp dụng cho cây '%s'.".formatted(crop.getDisplayName())));
     }
 }

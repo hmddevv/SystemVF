@@ -20,7 +20,7 @@ class ActivityTest {
     private final Planting planting = Planting.plant(plot, coffee, LocalDate.of(2016, 6, 15), 1100, true, TODAY);
 
     private Season seasonOf(LocalDate date) {
-        return Season.open(planting, SeasonPolicy.windowContaining(planting, date));
+        return Season.open(planting, new PerennialSeasonPolicy().windowContaining(planting, date));
     }
 
     @Test

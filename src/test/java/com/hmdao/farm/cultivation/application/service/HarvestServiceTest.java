@@ -17,13 +17,15 @@ import com.hmdao.farm.cultivation.domain.Harvest;
 import com.hmdao.farm.cultivation.domain.Planting;
 import com.hmdao.farm.cultivation.domain.PlantingStatus;
 import com.hmdao.farm.cultivation.domain.Season;
-import com.hmdao.farm.cultivation.domain.SeasonPolicy;
+import com.hmdao.farm.cultivation.domain.AnnualSeasonPolicy;
+import com.hmdao.farm.cultivation.domain.PerennialSeasonPolicy;
 import com.hmdao.farm.land.domain.Farm;
 import com.hmdao.farm.land.domain.Plot;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +43,7 @@ class HarvestServiceTest {
     private final CultivationAccess access =
             new CultivationAccess(plantings, seasons, activities, harvests, () -> OWNER);
     private final HarvestService service =
-            new HarvestService(harvests, new SeasonAssigner(seasons), access, clock);
+            new HarvestService(harvests, new SeasonAssigner(seasons, List.of(new PerennialSeasonPolicy(), new AnnualSeasonPolicy())), access, clock);
 
     private final Plot plot = Plot.create(Farm.create(OWNER, "Nông trại Cư M'gar", null), "Lô A2", 15_000, null);
     private final Crop coffee = Crop.create("Cà phê", "Robusta", true, 2);
@@ -73,7 +75,7 @@ class HarvestServiceTest {
         Planting planting = growingCoffee();
         owns(planting);
         service.record(5L, new RecordHarvestCommand(LocalDate.of(2025, 11, 28), 3200.5, BigDecimal.ZERO));
-        Season season = Season.open(planting, SeasonPolicy.windowContaining(planting, LocalDate.of(2025, 11, 28)));
+        Season season = Season.open(planting, new PerennialSeasonPolicy().windowContaining(planting, LocalDate.of(2025, 11, 28)));
         Harvest harvest = Harvest.record(season, LocalDate.of(2025, 11, 28), 3200.5, BigDecimal.ZERO);
         when(harvests.findByIdAndSeasonPlantingPlotFarmOwnerId(12L, OWNER)).thenReturn(Optional.of(harvest));
 

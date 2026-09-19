@@ -18,7 +18,7 @@ import com.hmdao.farm.cultivation.application.port.out.PlantingRepository;
 import com.hmdao.farm.cultivation.application.port.out.SeasonRepository;
 import com.hmdao.farm.cultivation.domain.Planting;
 import com.hmdao.farm.cultivation.domain.Season;
-import com.hmdao.farm.cultivation.domain.SeasonPolicy;
+import com.hmdao.farm.cultivation.domain.PerennialSeasonPolicy;
 import com.hmdao.farm.land.domain.Farm;
 import com.hmdao.farm.land.domain.Plot;
 import com.hmdao.farm.shared.domain.BaseEntity;
@@ -48,7 +48,7 @@ class SeasonServiceTest {
             Planting.plant(plot, coffee, LocalDate.of(2016, 6, 15), 1100, true, LocalDate.of(2026, 9, 17));
 
     private Season season(LocalDate anyDateInside, long id) {
-        return withId(Season.open(planting, SeasonPolicy.windowContaining(planting, anyDateInside)), id);
+        return withId(Season.open(planting, new PerennialSeasonPolicy().windowContaining(planting, anyDateInside)), id);
     }
 
     @Test
