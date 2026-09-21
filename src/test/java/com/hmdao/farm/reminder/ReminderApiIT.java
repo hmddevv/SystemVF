@@ -6,7 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.hmdao.farm.TestcontainersConfiguration;
+import com.hmdao.farm.support.IntegrationTest;
+import com.hmdao.farm.support.MutableTestClock;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDate;
@@ -15,33 +16,39 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 /**
- * Ngày tháng ở đây tính tương đối so với hôm nay, vì nhắc việc là chuyện của hiện tại. Các luật
- * phụ thuộc mùa (tưới mùa khô, bón mùa mưa) chỉ chạy vào đúng mùa nên test lọc theo mã luật thay
- * vì so cả danh sách — nếu không, test sẽ đỏ hay xanh tùy tháng chạy.
+ * Nhắc việc là chuyện của "hôm nay", nên ngày tháng ở đây tính tương đối so với đồng hồ — và
+ * đồng hồ do test cầm ({@link MutableTestClock}), không phải đồng hồ hệ thống. Nhờ vậy hai luật
+ * theo mùa kiểm được ở mức API: "đang là mùa khô" trở thành một dòng khai báo thay vì phải chờ
+ * đến tháng 12 mới chạy được test.
  */
-@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-class ReminderApiIntegrationTest {
+@IntegrationTest
+class ReminderApiIT {
 
     private static final long COFFEE = 1L;
     private static final long DURIAN = 4L;
+    private static final String IRRIGATION_RULE = "CARE-01";
+    private static final String FERTILIZING_RULE = "CARE-02";
     private static final String PRUNING_RULE = "CARE-03";
     private static final String YOUNG_ORCHARD_RULE = "CARE-04";
+
+    /** Tháng 1: giữa mùa khô Tây Nguyên (12–4). */
+    private static final LocalDate IN_DRY_SEASON = LocalDate.of(2027, 1, 20);
+    /** Tháng 9: cuối mùa mưa (5–9), vẫn còn trong cửa sổ bón phân. */
+    private static final LocalDate IN_RAINY_SEASON = LocalDate.of(2026, 9, 20);
 
     @Autowired
     MockMvc mvc;
 
     @Autowired
     EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    MutableTestClock clock;
 
     private long farmId;
     private long matureCoffeeId;
@@ -54,9 +61,9 @@ class ReminderApiIntegrationTest {
         long plotC = createPlot(farmId, "Lô C");
 
         matureCoffeeId = plant(plotA2, COFFEE, "2016-06-15", true);
-        harvest(matureCoffeeId, LocalDate.now().minusDays(40), 3000, "72000000");
+        harvest(matureCoffeeId, clock.today().minusDays(40), 3000, "72000000");
 
-        youngDurianId = plant(plotC, DURIAN, LocalDate.now().minusMonths(6).toString(), false);
+        youngDurianId = plant(plotC, DURIAN, clock.today().minusMonths(6).toString(), false);
     }
 
     @Test
@@ -73,6 +80,15 @@ class ReminderApiIntegrationTest {
                 .andExpect(jsonPath(pruning + ".plotName").value("Lô A2"));
     }
 
+    private void logActivity(String type, LocalDate date) throws Exception {
+        mvc.perform(post("/api/v1/plantings/{id}/activities", matureCoffeeId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"type": "%s", "activityDate": "%s", "cost": 500000}
+                                """.formatted(type, date)))
+                .andExpect(status().isCreated());
+    }
+
     @Test
     void br18_loggingTheWorkIsWhatClearsTheReminder() throws Exception {
         reminders().andExpect(jsonPath(ruleFor(PRUNING_RULE, matureCoffeeId)).exists());
@@ -81,7 +97,7 @@ class ReminderApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"type": "PRUNING", "activityDate": "%s", "cost": 3000000}
-                                """.formatted(LocalDate.now())))
+                                """.formatted(clock.today())))
                 .andExpect(status().isCreated());
 
         // Không có nút "đã làm" nào — chính dòng nhật ký vừa ghi làm lời nhắc biến mất
@@ -108,10 +124,42 @@ class ReminderApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"endDate": "%s", "reason": "PEST_DISEASE", "note": "Chết do nấm"}
-                                """.formatted(LocalDate.now())))
+                                """.formatted(clock.today())))
                 .andExpect(status().isOk());
 
         reminders().andExpect(jsonPath("$[?(@.plantingId == %d)]".formatted(youngDurianId)).doesNotExist());
+    }
+
+    @Test
+    void care01_remindsToIrrigateOnceTheDrySeasonArrives() throws Exception {
+        String irrigation = ruleFor(IRRIGATION_RULE, matureCoffeeId);
+
+        // Tháng 10 chưa phải mùa khô: luật tưới im lặng dù vườn cà phê chưa từng được tưới
+        reminders().andExpect(jsonPath(irrigation).doesNotExist());
+
+        clock.setToday(IN_DRY_SEASON);
+        // Vườn chưa có đợt tưới nào -> tới hạn ngay hôm nay, chưa quá hạn
+        reminders()
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(irrigation + ".severity").value("DUE_SOON"))
+                .andExpect(jsonPath(irrigation + ".suggestedActivity").value("WATERING"));
+
+        // Tưới cách đây 30 ngày, chu kỳ khuyến nghị 20 ngày -> quá hạn 10 ngày
+        logActivity("WATERING", clock.today().minusDays(30));
+
+        reminders()
+                .andExpect(jsonPath(irrigation + ".severity").value("OVERDUE"))
+                .andExpect(jsonPath(irrigation + ".daysOverdue").value(10));
+    }
+
+    @Test
+    void care02_remindsToFertiliseInTheRainsButNotOnDryGround() throws Exception {
+        clock.setToday(IN_RAINY_SEASON);
+        reminders().andExpect(jsonPath(ruleFor(FERTILIZING_RULE, matureCoffeeId)).exists());
+
+        // Cùng một vườn, cùng một dữ liệu — chỉ đổi mùa là lời nhắc bón phân biến mất
+        clock.setToday(IN_DRY_SEASON);
+        reminders().andExpect(jsonPath(ruleFor(FERTILIZING_RULE, matureCoffeeId)).doesNotExist());
     }
 
     @Test
@@ -121,14 +169,23 @@ class ReminderApiIntegrationTest {
 
         reminders().andExpect(status().isOk());
 
-        // 1 kiểm tra user + 1 lứa đang canh tác + 1 MAX ngày theo loại việc + 1 MAX ngày thu hoạch.
-        // Luật chạy trên bộ nhớ nên thêm luật không thêm truy vấn.
-        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(4);
+        // 1 kiểm tra user + 1 kiểm tra nông trại thuộc về mình (BR-11) + 1 lứa đang canh tác
+        // + 1 MAX ngày theo loại việc + 1 MAX ngày thu hoạch. Luật chạy trên bộ nhớ nên thêm
+        // luật không thêm truy vấn nào.
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(5);
     }
 
     @Test
-    void br11_anotherOwnerGetsNoRemindersFromThisFarm() throws Exception {
+    void br11_anotherOwnerIsToldTheFarmDoesNotExistRatherThanGettingAnEmptyList() throws Exception {
         mvc.perform(get("/api/v1/reminders").param("farmId", String.valueOf(farmId)).header("X-User-Id", 2))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.rule").value("BR-11"));
+    }
+
+    /** Không lọc nông trại thì chủ khác chỉ đơn giản là không có việc gì — đó mới là danh sách rỗng. */
+    @Test
+    void br11_anotherOwnerWithNoOrchardsSimplyHasNothingDue() throws Exception {
+        mvc.perform(get("/api/v1/reminders").header("X-User-Id", 2))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }

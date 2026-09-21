@@ -29,6 +29,10 @@ interface JpqlCareContextQueryAdapter extends Repository<Planting, Long>, CareCo
     List<PlantingSnapshot> findActivePlantings(@Param("ownerId") Long ownerId, @Param("farmId") Long farmId);
 
     @Override
+    @Query("select count(f) > 0 from Farm f where f.id = :farmId and f.ownerId = :ownerId")
+    boolean farmBelongsToOwner(@Param("ownerId") Long ownerId, @Param("farmId") Long farmId);
+
+    @Override
     @Query("""
             select new com.hmdao.farm.reminder.application.dto.LastActivityDate(
                 s.planting.id, a.type, max(a.activityDate))

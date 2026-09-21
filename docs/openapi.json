@@ -1,0 +1,4125 @@
+{
+  "components" : {
+    "schemas" : {
+      "ActivityResponse" : {
+        "properties" : {
+          "activityDate" : {
+            "example" : "2025-06-10",
+            "format" : "date",
+            "type" : "string"
+          },
+          "cost" : {
+            "example" : 1.25E7,
+            "type" : "number"
+          },
+          "id" : {
+            "example" : 31,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "note" : {
+            "description" : "Có thể null, trừ hoạt động loại OTHER",
+            "example" : "Bón NPK 16-16-8, 20 bao",
+            "type" : "string"
+          },
+          "seasonId" : {
+            "description" : "Niên vụ hệ thống tự gán theo ngày thực hiện",
+            "example" : 7,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "seasonLabel" : {
+            "example" : "2025/2026",
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "WATERING", "FERTILIZING", "SPRAYING", "WEEDING", "PRUNING", "OTHER" ],
+            "example" : "FERTILIZING",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CorrectPlantingRequest" : {
+        "properties" : {
+          "plantingDate" : {
+            "example" : "2016-06-15",
+            "format" : "date",
+            "type" : "string"
+          },
+          "treeCount" : {
+            "example" : 1080,
+            "exclusiveMinimum" : 0,
+            "format" : "int32",
+            "maximum" : 10000000,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "plantingDate", "treeCount" ],
+        "type" : "object"
+      },
+      "CropRequest" : {
+        "properties" : {
+          "name" : {
+            "example" : "Sầu riêng",
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "perennial" : {
+            "description" : "true = cây lâu năm, false = cây ngắn ngày",
+            "example" : true,
+            "type" : "boolean"
+          },
+          "seasonStartMonth" : {
+            "description" : "Tháng bắt đầu niên vụ (1–12). Bắt buộc với cây lâu năm, bỏ trống với cây ngắn ngày.",
+            "example" : 10,
+            "format" : "int32",
+            "maximum" : 12,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "variety" : {
+            "example" : "Musang King",
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "name", "perennial" ],
+        "type" : "object"
+      },
+      "CropResponse" : {
+        "properties" : {
+          "displayName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "perennial" : {
+            "type" : "boolean"
+          },
+          "seasonStartMonth" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "variety" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "FarmRequest" : {
+        "properties" : {
+          "location" : {
+            "example" : "Xã Ea Tar, huyện Cư M'gar, Đắk Lắk",
+            "maxLength" : 255,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "name" : {
+            "example" : "Nông trại Cư M'gar",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
+      "FarmResponse" : {
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "plotCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalAreaM2" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "HarvestResponse" : {
+        "properties" : {
+          "harvestDate" : {
+            "example" : "2025-11-28",
+            "format" : "date",
+            "type" : "string"
+          },
+          "id" : {
+            "example" : 12,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "pricePerKg" : {
+            "description" : "Doanh thu chia sản lượng — giá bán thực tế của lần thu hoạch này",
+            "example" : 24000.0,
+            "type" : "number"
+          },
+          "quantityKg" : {
+            "example" : 3200.5,
+            "format" : "double",
+            "type" : "number"
+          },
+          "revenue" : {
+            "example" : 7.68E7,
+            "type" : "number"
+          },
+          "seasonId" : {
+            "description" : "Niên vụ hệ thống tự gán theo ngày thu hoạch",
+            "example" : 7,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "seasonLabel" : {
+            "example" : "2025/2026",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LogActivityRequest" : {
+        "properties" : {
+          "activityDate" : {
+            "description" : "Ngày thực hiện; quyết định niên vụ của bản ghi",
+            "example" : "2025-06-10",
+            "format" : "date",
+            "type" : "string"
+          },
+          "cost" : {
+            "description" : "Chi phí (VND). Bỏ trống = 0 khi tự làm, không tốn chi phí.",
+            "example" : 12500000,
+            "minimum" : 0,
+            "type" : "number"
+          },
+          "note" : {
+            "description" : "Ghi chú; bắt buộc khi loại hoạt động là OTHER",
+            "example" : "Bón NPK 16-16-8, 20 bao",
+            "maxLength" : 255,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "WATERING: tưới · FERTILIZING: bón phân · SPRAYING: phun thuốc · WEEDING: làm cỏ · PRUNING: tỉa cành · OTHER: khác (bắt buộc ghi chú)",
+            "enum" : [ "WATERING", "FERTILIZING", "SPRAYING", "WEEDING", "PRUNING", "OTHER" ],
+            "example" : "FERTILIZING",
+            "type" : "string"
+          }
+        },
+        "required" : [ "activityDate", "type" ],
+        "type" : "object"
+      },
+      "PageResponseActivityResponse" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ActivityResponse"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "description" : "Trang hiện tại, đánh số từ 0",
+            "example" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "size" : {
+            "description" : "Số bản ghi mỗi trang, tối đa 200",
+            "example" : 20,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalElements" : {
+            "description" : "Tổng số bản ghi khớp điều kiện",
+            "example" : 137,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "example" : 7,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PageResponseHarvestResponse" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/HarvestResponse"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "description" : "Trang hiện tại, đánh số từ 0",
+            "example" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "size" : {
+            "description" : "Số bản ghi mỗi trang, tối đa 200",
+            "example" : 20,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalElements" : {
+            "description" : "Tổng số bản ghi khớp điều kiện",
+            "example" : 137,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "example" : 7,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PlantCropRequest" : {
+        "properties" : {
+          "alreadyProducing" : {
+            "description" : "true nếu vườn đã cho thu hoạch (số hóa vườn có sẵn). Mặc định false.",
+            "example" : true,
+            "type" : "boolean"
+          },
+          "cropId" : {
+            "description" : "Id cây trồng trong danh mục",
+            "example" : 1,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "plantingDate" : {
+            "description" : "Ngày trồng, không ở tương lai",
+            "example" : "2016-06-15",
+            "format" : "date",
+            "type" : "string"
+          },
+          "treeCount" : {
+            "example" : 1100,
+            "exclusiveMinimum" : 0,
+            "format" : "int32",
+            "maximum" : 10000000,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "cropId", "plantingDate", "treeCount" ],
+        "type" : "object"
+      },
+      "PlantingResponse" : {
+        "properties" : {
+          "ageMonths" : {
+            "description" : "Tuổi vườn tính đến ngày kết thúc hoặc hôm nay",
+            "example" : 85,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "cropId" : {
+            "example" : 3,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "cropName" : {
+            "example" : "Hồ tiêu (Vĩnh Linh)",
+            "type" : "string"
+          },
+          "endDate" : {
+            "description" : "null khi lứa trồng chưa kết thúc",
+            "example" : "2026-08-20",
+            "format" : "date",
+            "type" : "string"
+          },
+          "endNote" : {
+            "description" : "Ghi chú khi kết thúc, có thể null",
+            "example" : "Dịch chết nhanh lan từ lô bên cạnh",
+            "type" : "string"
+          },
+          "endReason" : {
+            "description" : "null khi lứa trồng chưa kết thúc",
+            "enum" : [ "MARKET", "PEST_DISEASE", "WEATHER", "OLD_AGE", "OTHER" ],
+            "example" : "PEST_DISEASE",
+            "type" : "string"
+          },
+          "id" : {
+            "example" : 2,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "perennial" : {
+            "example" : true,
+            "type" : "boolean"
+          },
+          "plantingDate" : {
+            "example" : "2019-07-01",
+            "format" : "date",
+            "type" : "string"
+          },
+          "plotId" : {
+            "example" : 1,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "plotName" : {
+            "example" : "Lô A2",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "GROWING", "PRODUCING", "TERMINATED" ],
+            "example" : "TERMINATED",
+            "type" : "string"
+          },
+          "treeCount" : {
+            "example" : 400,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PlotRequest" : {
+        "properties" : {
+          "areaM2" : {
+            "description" : "Diện tích (m²)",
+            "example" : 15000,
+            "exclusiveMinimum" : 0,
+            "format" : "double",
+            "maximum" : 100000000,
+            "type" : "number"
+          },
+          "name" : {
+            "example" : "Lô A2",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "soilType" : {
+            "example" : "Đất đỏ bazan",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "areaM2", "name" ],
+        "type" : "object"
+      },
+      "PlotResponse" : {
+        "properties" : {
+          "areaHectares" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "areaM2" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "farmId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "soilType" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProblemDetail" : {
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "format" : "uri",
+            "type" : "string"
+          },
+          "properties" : {
+            "additionalProperties" : { },
+            "type" : "object"
+          },
+          "status" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "format" : "uri",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProfitLossReportResponse" : {
+        "properties" : {
+          "groupBy" : {
+            "enum" : [ "CROP", "PLOT", "PLANTING" ],
+            "example" : "CROP",
+            "type" : "string"
+          },
+          "rows" : {
+            "description" : "Sắp xếp theo lãi/lỗ giảm dần",
+            "items" : {
+              "$ref" : "#/components/schemas/ProfitLossRowResponse"
+            },
+            "type" : "array"
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/ProfitLossRowResponse",
+            "description" : "Dòng tổng của toàn báo cáo; null khi chưa có lứa trồng nào"
+          },
+          "year" : {
+            "description" : "Niên vụ đang lọc; null = mọi niên vụ",
+            "example" : 2025,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ProfitLossRowResponse" : {
+        "properties" : {
+          "activityCount" : {
+            "example" : 37,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "areaM2" : {
+            "description" : "Tổng diện tích các lô liên quan, không cộng trùng lô trồng xen",
+            "example" : 15000.0,
+            "format" : "double",
+            "type" : "number"
+          },
+          "harvestCount" : {
+            "example" : 9,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "id" : {
+            "description" : "Id của cây trồng, lô đất hoặc lứa trồng tùy groupBy; null ở dòng tổng",
+            "example" : 1,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "label" : {
+            "example" : "Cà phê (Robusta)",
+            "type" : "string"
+          },
+          "lifetimeNetProfit" : {
+            "description" : "Lãi/lỗ trên toàn bộ niên vụ, không chịu bộ lọc year",
+            "example" : 1.617E8,
+            "type" : "number"
+          },
+          "netProfit" : {
+            "example" : 1.617E8,
+            "type" : "number"
+          },
+          "paybackYear" : {
+            "description" : "Niên vụ đầu tiên luỹ kế hòa vốn; null = chưa hoàn vốn. Chỉ có khi groupBy=PLANTING",
+            "example" : 2021,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "profitPer1000m2" : {
+            "description" : "Lãi/lỗ trên 1.000 m²; null khi không có diện tích hợp lệ",
+            "example" : 1.078E7,
+            "type" : "number"
+          },
+          "profitPerTree" : {
+            "description" : "Lãi/lỗ trên mỗi cây; null khi không có số cây hợp lệ",
+            "example" : 147000.0,
+            "type" : "number"
+          },
+          "seasonCount" : {
+            "description" : "Số niên vụ có dữ liệu trong phạm vi lọc",
+            "example" : 5,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sharedPlot" : {
+            "description" : "true khi nhóm có lô trồng xen — chi phí dùng chung ghi vào từng lứa nên số theo diện tích chỉ là ước lượng",
+            "example" : true,
+            "type" : "boolean"
+          },
+          "totalCost" : {
+            "example" : 2.415E8,
+            "type" : "number"
+          },
+          "totalQuantityKg" : {
+            "example" : 16800.5,
+            "format" : "double",
+            "type" : "number"
+          },
+          "totalRevenue" : {
+            "example" : 4.032E8,
+            "type" : "number"
+          },
+          "treeCount" : {
+            "example" : 1100,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "yieldKgPerTree" : {
+            "example" : 15.27,
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "RecordHarvestRequest" : {
+        "properties" : {
+          "harvestDate" : {
+            "description" : "Ngày thu hoạch; quyết định niên vụ của bản ghi",
+            "example" : "2025-11-28",
+            "format" : "date",
+            "type" : "string"
+          },
+          "quantityKg" : {
+            "description" : "Sản lượng tươi hoặc khô tùy cách nhà nông ghi, đơn vị kg",
+            "example" : 3200.5,
+            "exclusiveMinimum" : 0,
+            "format" : "double",
+            "maximum" : 100000000,
+            "type" : "number"
+          },
+          "revenue" : {
+            "description" : "Doanh thu (VND). Bỏ trống = 0 khi đã thu hoạch nhưng chưa bán.",
+            "example" : 76800000,
+            "minimum" : 0,
+            "type" : "number"
+          }
+        },
+        "required" : [ "harvestDate", "quantityKg" ],
+        "type" : "object"
+      },
+      "ReminderResponse" : {
+        "properties" : {
+          "cropName" : {
+            "example" : "Cà phê (Robusta)",
+            "type" : "string"
+          },
+          "daysOverdue" : {
+            "description" : "Số ngày đã quá hạn; ≤ 0 là còn bấy nhiêu ngày nữa mới tới hạn",
+            "example" : 6,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "detail" : {
+            "example" : "Đợt tưới gần nhất 2026-01-05, chu kỳ khuyến nghị 20 ngày.",
+            "type" : "string"
+          },
+          "dueDate" : {
+            "example" : "2026-01-25",
+            "format" : "date",
+            "type" : "string"
+          },
+          "plantingId" : {
+            "example" : 2,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "plotName" : {
+            "example" : "Lô A2",
+            "type" : "string"
+          },
+          "ruleCode" : {
+            "description" : "Mã luật sinh ra lời nhắc, truy vết tới tài liệu",
+            "example" : "CARE-01",
+            "type" : "string"
+          },
+          "severity" : {
+            "enum" : [ "OVERDUE", "DUE_SOON" ],
+            "example" : "OVERDUE",
+            "type" : "string"
+          },
+          "suggestedActivity" : {
+            "description" : "Loại hoạt động nên ghi sau khi làm xong",
+            "enum" : [ "WATERING", "FERTILIZING", "SPRAYING", "WEEDING", "PRUNING", "OTHER" ],
+            "example" : "WATERING",
+            "type" : "string"
+          },
+          "title" : {
+            "example" : "Tưới nước mùa khô",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SeasonResponse" : {
+        "properties" : {
+          "activityCount" : {
+            "example" : 12,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "cropName" : {
+            "example" : "Cà phê (Robusta)",
+            "type" : "string"
+          },
+          "endDate" : {
+            "description" : "null khi niên vụ đang diễn ra và chưa có cận trên",
+            "example" : "2026-01-31",
+            "format" : "date",
+            "type" : "string"
+          },
+          "harvestCount" : {
+            "example" : 3,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "id" : {
+            "example" : 7,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "label" : {
+            "description" : "Nhãn hiển thị; vắt qua hai năm thì có dạng 2025/2026",
+            "example" : "2025/2026",
+            "type" : "string"
+          },
+          "netProfit" : {
+            "description" : "Doanh thu trừ chi phí; báo cáo đầy đủ theo cây/lô/năm thuộc Phase 2",
+            "example" : 8.135E7,
+            "type" : "number"
+          },
+          "plantingId" : {
+            "example" : 2,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "startDate" : {
+            "example" : "2025-02-01",
+            "format" : "date",
+            "type" : "string"
+          },
+          "totalCost" : {
+            "description" : "Tổng chi phí chăm sóc trong niên vụ",
+            "example" : 4.825E7,
+            "type" : "number"
+          },
+          "totalQuantityKg" : {
+            "example" : 5400.5,
+            "format" : "double",
+            "type" : "number"
+          },
+          "totalRevenue" : {
+            "example" : 1.296E8,
+            "type" : "number"
+          },
+          "year" : {
+            "description" : "Năm bắt đầu niên vụ",
+            "example" : 2025,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "TerminatePlantingRequest" : {
+        "properties" : {
+          "endDate" : {
+            "description" : "Ngày cưa bỏ / chặt bỏ",
+            "example" : "2026-08-20",
+            "format" : "date",
+            "type" : "string"
+          },
+          "note" : {
+            "description" : "Ghi chú thêm (tùy chọn)",
+            "example" : "Dịch chết nhanh lan từ lô bên cạnh",
+            "maxLength" : 255,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "reason" : {
+            "description" : "MARKET: giá thị trường · PEST_DISEASE: sâu bệnh · WEATHER: thời tiết · OLD_AGE: già cỗi · OTHER: khác",
+            "enum" : [ "MARKET", "PEST_DISEASE", "WEATHER", "OLD_AGE", "OTHER" ],
+            "example" : "PEST_DISEASE",
+            "type" : "string"
+          }
+        },
+        "required" : [ "endDate", "reason" ],
+        "type" : "object"
+      }
+    }
+  },
+  "info" : {
+    "description" : "Quản lý canh tác nông trại: nông trại, lô đất, danh mục cây trồng, lứa trồng xen canh, nhật ký chăm sóc, thu hoạch và lãi/lỗ theo từng cây.\n\nLỗi trả về dạng RFC 9457 ProblemDetail; trường `rule` là mã quy tắc nghiệp vụ trong docs/architecture.md.",
+    "title" : "Farm Management System API",
+    "version" : "v1"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/v1/activities/{activityId}" : {
+      "delete" : {
+        "description" : "Nhật ký được xóa thật vì đây là dữ liệu nhập tay, không phải sự kiện vòng đời.",
+        "operationId" : "delete_5",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "activityId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Xóa hoạt động nhập sai",
+        "tags" : [ "6. Nhật ký canh tác" ]
+      },
+      "get" : {
+        "operationId" : "get_5",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "activityId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivityResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Chi tiết một hoạt động",
+        "tags" : [ "6. Nhật ký canh tác" ]
+      },
+      "put" : {
+        "description" : "Đổi ngày sang chu kỳ sản xuất khác thì bản ghi tự chuyển sang niên vụ tương ứng.",
+        "operationId" : "correct_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "activityId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LogActivityRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivityResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Sửa hoạt động nhập sai",
+        "tags" : [ "6. Nhật ký canh tác" ]
+      }
+    },
+    "/api/v1/crops" : {
+      "get" : {
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CropResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Danh mục cây trồng",
+        "tags" : [ "3. Cây trồng" ]
+      },
+      "post" : {
+        "description" : "Cây lâu năm bắt buộc có tháng bắt đầu niên vụ; cây ngắn ngày để trống (BR-05a).",
+        "operationId" : "create_2",
+        "parameters" : [ {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CropRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CropResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Thêm cây trồng vào danh mục",
+        "tags" : [ "3. Cây trồng" ]
+      }
+    },
+    "/api/v1/crops/{cropId}" : {
+      "delete" : {
+        "description" : "Trả 409 nếu cây đã có lứa trồng (BR-10).",
+        "operationId" : "delete_4",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "cropId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Xóa cây trồng",
+        "tags" : [ "3. Cây trồng" ]
+      },
+      "get" : {
+        "operationId" : "get_4",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "cropId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CropResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Chi tiết cây trồng",
+        "tags" : [ "3. Cây trồng" ]
+      },
+      "put" : {
+        "operationId" : "update_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "cropId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CropRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CropResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Sửa cây trồng",
+        "tags" : [ "3. Cây trồng" ]
+      }
+    },
+    "/api/v1/farms" : {
+      "get" : {
+        "description" : "Kèm số lô và tổng diện tích mỗi nông trại.",
+        "operationId" : "list",
+        "parameters" : [ {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/FarmResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Danh sách nông trại của tôi",
+        "tags" : [ "1. Nông trại" ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "parameters" : [ {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FarmRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FarmResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Tạo nông trại",
+        "tags" : [ "1. Nông trại" ]
+      }
+    },
+    "/api/v1/farms/{farmId}" : {
+      "delete" : {
+        "description" : "Trả 409 nếu nông trại còn lô đất (BR-10).",
+        "operationId" : "delete_3",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "farmId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Xóa nông trại",
+        "tags" : [ "1. Nông trại" ]
+      },
+      "get" : {
+        "operationId" : "get_3",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "farmId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FarmResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Chi tiết nông trại",
+        "tags" : [ "1. Nông trại" ]
+      },
+      "put" : {
+        "operationId" : "update_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "farmId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FarmRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FarmResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Sửa nông trại",
+        "tags" : [ "1. Nông trại" ]
+      }
+    },
+    "/api/v1/farms/{farmId}/plots" : {
+      "get" : {
+        "operationId" : "listByFarm",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "farmId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PlotResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Danh sách lô đất của nông trại",
+        "tags" : [ "2. Lô đất" ]
+      },
+      "post" : {
+        "description" : "Diện tích phải > 0 (BR-01); tên lô không trùng trong cùng nông trại (409).",
+        "operationId" : "create_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "farmId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlotRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlotResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Thêm lô đất vào nông trại",
+        "tags" : [ "2. Lô đất" ]
+      }
+    },
+    "/api/v1/harvests/{harvestId}" : {
+      "delete" : {
+        "operationId" : "delete_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "harvestId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Xóa lần thu hoạch nhập sai",
+        "tags" : [ "7. Thu hoạch" ]
+      },
+      "get" : {
+        "operationId" : "get_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "harvestId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HarvestResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Chi tiết một lần thu hoạch",
+        "tags" : [ "7. Thu hoạch" ]
+      },
+      "put" : {
+        "description" : "Không đảo ngược trạng thái lứa trồng về GROWING (BR-09).",
+        "operationId" : "correct_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "harvestId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecordHarvestRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HarvestResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Sửa lần thu hoạch nhập sai",
+        "tags" : [ "7. Thu hoạch" ]
+      }
+    },
+    "/api/v1/plantings/{plantingId}" : {
+      "delete" : {
+        "description" : "Muốn bỏ một lứa trồng thật (cưa bỏ, chặt bỏ) thì dùng /termination để giữ lịch sử.",
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Xóa lứa trồng tạo nhầm",
+        "tags" : [ "4. Lứa trồng" ]
+      },
+      "get" : {
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlantingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Chi tiết lứa trồng",
+        "tags" : [ "4. Lứa trồng" ]
+      },
+      "put" : {
+        "description" : "Không đổi được cây trồng hay lô đất — đổi cây là một lứa trồng mới.",
+        "operationId" : "correct",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CorrectPlantingRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlantingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Sửa ngày trồng, số cây (nhập sai)",
+        "tags" : [ "4. Lứa trồng" ]
+      }
+    },
+    "/api/v1/plantings/{plantingId}/activities" : {
+      "post" : {
+        "description" : "Niên vụ được tự gán theo ngày thực hiện (BR-05a); ngày phải trong khoảng từ ngày trồng đến hôm nay, và không sau ngày cưa bỏ (BR-07).",
+        "operationId" : "log",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LogActivityRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivityResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Ghi một hoạt động chăm sóc",
+        "tags" : [ "6. Nhật ký canh tác" ]
+      }
+    },
+    "/api/v1/plantings/{plantingId}/harvests" : {
+      "post" : {
+        "description" : "Niên vụ được tự gán theo ngày thu hoạch (BR-05a). Lần thu hoạch đầu tiên đưa lứa đang GROWING sang PRODUCING (BR-09).",
+        "operationId" : "record",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecordHarvestRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HarvestResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Ghi nhận một lần thu hoạch",
+        "tags" : [ "7. Thu hoạch" ]
+      }
+    },
+    "/api/v1/plantings/{plantingId}/production-start" : {
+      "post" : {
+        "description" : "GROWING → PRODUCING (BR-03).",
+        "operationId" : "startProducing",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlantingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Bắt đầu cho thu hoạch",
+        "tags" : [ "4. Lứa trồng" ]
+      }
+    },
+    "/api/v1/plantings/{plantingId}/seasons" : {
+      "get" : {
+        "description" : "Mới nhất trước, kèm tổng chi phí, sản lượng, doanh thu và lãi/lỗ để so sánh theo năm.",
+        "operationId" : "listByPlanting",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SeasonResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Các niên vụ của một lứa trồng",
+        "tags" : [ "5. Niên vụ" ]
+      }
+    },
+    "/api/v1/plantings/{plantingId}/termination" : {
+      "post" : {
+        "description" : "Bắt buộc ngày và lý do; ngày kết thúc ≥ ngày trồng và ≤ hôm nay (BR-04). Lứa trồng đã kết thúc không chuyển trạng thái được nữa (BR-03).",
+        "operationId" : "terminate",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plantingId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TerminatePlantingRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlantingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Kết thúc lứa trồng (cưa bỏ)",
+        "tags" : [ "4. Lứa trồng" ]
+      }
+    },
+    "/api/v1/plots/{plotId}" : {
+      "delete" : {
+        "description" : "Trả 409 nếu lô còn lứa trồng (BR-10).",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plotId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Xóa lô đất",
+        "tags" : [ "2. Lô đất" ]
+      },
+      "get" : {
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plotId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlotResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Chi tiết lô đất",
+        "tags" : [ "2. Lô đất" ]
+      },
+      "put" : {
+        "operationId" : "update",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plotId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlotRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlotResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Sửa lô đất",
+        "tags" : [ "2. Lô đất" ]
+      }
+    },
+    "/api/v1/plots/{plotId}/plantings" : {
+      "get" : {
+        "description" : "activeOnly=true (mặc định): lứa đang canh tác. activeOnly=false: toàn bộ lịch sử sử dụng đất.",
+        "operationId" : "listByPlot",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plotId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "activeOnly",
+          "required" : false,
+          "schema" : {
+            "default" : true,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PlantingResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Lô đất đang có những cây gì",
+        "tags" : [ "4. Lứa trồng" ]
+      },
+      "post" : {
+        "description" : "Gọi nhiều lần trên cùng lô để trồng xen canh. Ngày trồng không ở tương lai, số cây > 0 (BR-02).",
+        "operationId" : "plant",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "plotId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlantCropRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlantingResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Trồng cây lên lô đất",
+        "tags" : [ "4. Lứa trồng" ]
+      }
+    },
+    "/api/v1/reminders" : {
+      "get" : {
+        "description" : "Quá hạn trước, rồi đến việc tới hạn trong 7 ngày. Chỉ tính lứa đang canh tác. farmId bỏ trống = mọi nông trại của bạn.",
+        "operationId" : "list_2",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "farmId",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReminderResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Việc chăm sóc đang tới hạn",
+        "tags" : [ "9. Nhắc việc" ]
+      }
+    },
+    "/api/v1/reports/profit-loss" : {
+      "get" : {
+        "description" : "year là niên vụ (vụ 2/2025–1/2026 là 2025), bỏ trống = mọi niên vụ. farmId bỏ trống = mọi nông trại của bạn. Lứa trồng chưa ghi gì vẫn hiện với số 0. groupBy=PLANTING kèm niên vụ hoàn vốn.",
+        "operationId" : "profitLoss",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "groupBy",
+          "required" : false,
+          "schema" : {
+            "default" : "CROP",
+            "enum" : [ "CROP", "PLOT", "PLANTING" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "year",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "farmId",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfitLossReportResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Lãi/lỗ theo cây, lô hoặc lứa trồng",
+        "tags" : [ "8. Báo cáo" ]
+      }
+    },
+    "/api/v1/seasons/{seasonId}" : {
+      "delete" : {
+        "description" : "Chỉ xóa được khi không còn hoạt động và thu hoạch nào (BR-10).",
+        "operationId" : "delete_6",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "seasonId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Xóa niên vụ rỗng",
+        "tags" : [ "5. Niên vụ" ]
+      },
+      "get" : {
+        "operationId" : "get_6",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "seasonId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SeasonResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Chi tiết một niên vụ",
+        "tags" : [ "5. Niên vụ" ]
+      }
+    },
+    "/api/v1/seasons/{seasonId}/activities" : {
+      "get" : {
+        "description" : "Mới nhất trước, có phân trang.",
+        "operationId" : "listBySeason_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "seasonId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseActivityResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Nhật ký của một niên vụ",
+        "tags" : [ "6. Nhật ký canh tác" ]
+      }
+    },
+    "/api/v1/seasons/{seasonId}/harvests" : {
+      "get" : {
+        "description" : "Mới nhất trước, có phân trang.",
+        "operationId" : "listBySeason",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "seasonId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseHarvestResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Các lần thu hoạch của một niên vụ",
+        "tags" : [ "7. Thu hoạch" ]
+      }
+    }
+  },
+  "servers" : [ {
+    "description" : "Generated server url",
+    "url" : "http://localhost"
+  } ],
+  "tags" : [ {
+    "description" : "Epic D — tưới, bón phân, phun thuốc, làm cỏ, tỉa cành kèm ngày và chi phí. Ghi vào lứa trồng, đọc theo niên vụ: nhà nông chỉ khai cây nào và ngày nào, hệ thống tự xếp vào đúng niên vụ.",
+    "name" : "6. Nhật ký canh tác"
+  }, {
+    "description" : "Epic A — quản lý tập trung nhiều nông trại",
+    "name" : "1. Nông trại"
+  }, {
+    "description" : "Epic B, C — trồng xen canh và vòng đời lứa trồng",
+    "name" : "4. Lứa trồng"
+  }, {
+    "description" : "Epic E (Phase 2) — lãi/lỗ theo cây, lô hoặc từng lứa trồng. Gom theo NIÊN VỤ, không theo năm dương lịch, nên chi phí chăm sóc và doanh thu của cùng một chu kỳ sản xuất luôn nằm chung một dòng.",
+    "name" : "8. Báo cáo"
+  }, {
+    "description" : "Epic F (Phase 2) — việc chăm sóc nên làm, tính lại mỗi lần gọi từ chính nhật ký. Không có nút \"đã làm\": ghi nhật ký tương ứng thì lời nhắc tự biến mất.",
+    "name" : "9. Nhắc việc"
+  }, {
+    "description" : "Danh mục loại cây và tháng bắt đầu niên vụ",
+    "name" : "3. Cây trồng"
+  }, {
+    "description" : "Epic A — theo dõi riêng từng khu vực canh tác",
+    "name" : "2. Lô đất"
+  }, {
+    "description" : "Chu kỳ sản xuất của một lứa trồng. Niên vụ do hệ thống tự tạo khi ghi hoạt động hoặc thu hoạch, theo tháng bắt đầu niên vụ của loại cây — vì vậy không có API tạo hay sửa.",
+    "name" : "5. Niên vụ"
+  }, {
+    "description" : "Epic E — sản lượng và doanh thu mỗi lần thu hoạch. Một niên vụ có nhiều lần: cà phê hái nhiều đợt, sầu riêng cắt theo lứa chín.",
+    "name" : "7. Thu hoạch"
+  } ]
+}

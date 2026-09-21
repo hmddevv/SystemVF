@@ -2,6 +2,7 @@ package com.hmdao.farm.reminder.application.service;
 
 import com.hmdao.farm.cultivation.domain.ActivityType;
 import com.hmdao.farm.identity.application.port.CurrentUserProvider;
+import com.hmdao.farm.shared.domain.ResourceNotFoundException;
 import com.hmdao.farm.reminder.application.dto.LastActivityDate;
 import com.hmdao.farm.reminder.application.dto.LastHarvestDate;
 import com.hmdao.farm.reminder.application.dto.PlantingSnapshot;
@@ -52,7 +53,11 @@ class CareReminderService implements CareReminderUseCase {
 
     @Override
     public List<ReminderView> list(Long farmId) {
-        List<PlantingSnapshot> plantings = query.findActivePlantings(currentUser.currentUserId(), farmId);
+        Long ownerId = currentUser.currentUserId();
+        if (farmId != null && !query.farmBelongsToOwner(ownerId, farmId)) {
+            throw new ResourceNotFoundException("nông trại", farmId);
+        }
+        List<PlantingSnapshot> plantings = query.findActivePlantings(ownerId, farmId);
         if (plantings.isEmpty()) {
             return List.of();
         }

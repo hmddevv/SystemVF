@@ -18,4 +18,11 @@ public interface CareContextQueryPort {
     List<LastActivityDate> lastActivityDates(Collection<Long> plantingIds);
 
     List<LastHarvestDate> lastHarvestDates(Collection<Long> plantingIds);
+
+    /**
+     * Nông trại được chỉ đích danh có thuộc người gọi không (BR-11). Không kiểm thì lọc theo
+     * nông trại của người khác trả về danh sách rỗng — không phân biệt được với "không có
+     * việc gì tới hạn".
+     */
+    boolean farmBelongsToOwner(Long ownerId, Long farmId);
 }

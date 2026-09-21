@@ -1,6 +1,7 @@
 package com.hmdao.farm.shared.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -30,18 +31,29 @@ public class OpenApiConfig {
     }
 
     /**
-     * Lỗi validation (400) do lớp cha ResponseEntityExceptionHandler xử lý nên springdoc không tự
-     * phát hiện; bổ sung cho mọi thao tác có request body.
+     * Lỗi 400 do lớp cha {@code ResponseEntityExceptionHandler} xử lý nên springdoc không tự
+     * phát hiện được. Bổ sung cho mọi thao tác nhận dữ liệu từ người gọi — thân request
+     * (Bean Validation) hoặc tham số đường dẫn/truy vấn (sai kiểu, sai giá trị enum).
      */
     @Bean
     OpenApiCustomizer validationErrorResponse() {
         return openApi -> openApi.getPaths().values().stream()
                 .flatMap(path -> path.readOperations().stream())
-                .filter(operation -> operation.getRequestBody() != null)
+                .filter(OpenApiConfig::acceptsClientInput)
                 .forEach(operation -> operation.getResponses().addApiResponse("400", new ApiResponse()
-                        .description("Dữ liệu không hợp lệ — chi tiết từng trường trong 'errors'")
+                        .description("Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', "
+                                + "lỗi tham số nằm trong 'detail'")
                         .content(new Content().addMediaType("application/problem+json",
                                 new MediaType().schema(new Schema<>().$ref("#/components/schemas/ProblemDetail"))))));
+    }
+
+    /** Header X-User-Id có ở mọi thao tác nên không tính; nó sai thì trả 401 chứ không phải 400. */
+    private static boolean acceptsClientInput(Operation operation) {
+        if (operation.getRequestBody() != null) {
+            return true;
+        }
+        return operation.getParameters() != null && operation.getParameters().stream()
+                .anyMatch(parameter -> !"header".equals(parameter.getIn()));
     }
 
     /** MVP chưa có đăng nhập: cho phép chọn chủ sở hữu qua header ngay trên Swagger UI. */

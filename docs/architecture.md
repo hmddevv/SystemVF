@@ -317,6 +317,22 @@ Mỗi quy tắc có mã để truy vết tới test case.
 | BR-17 | `groupBy=PLANTING` kèm luỹ kế và niên vụ hoàn vốn, tính trên **toàn bộ** niên vụ của lứa dù báo cáo đang lọc `year` — cây lâu năm lỗ vài năm kiến thiết cơ bản là bình thường, báo cáo theo năm mà thiếu luỹ kế sẽ kết luận sai | `ProfitLossReportService` | — |
 | BR-18 | Nhắc việc chỉ tính cho lứa đang canh tác và **không lưu trạng thái**: lời nhắc biến mất khi nhật ký tương ứng được ghi. Không có nút "đã làm" vì nhà nông vẫn phải ghi nhật ký (ADR-12) | `CareReminderService` | — |
 
+### 6.1. Luật nhắc việc (engine Epic F)
+
+BR-18 nói engine hoạt động thế nào; bảng này liệt kê các luật cụ thể đang chạy. Mỗi luật là một
+lớp riêng thực thi `CareRule`, được nạp qua `List<CareRule>` — thêm luật mới không sửa dòng nào
+trong `CareReminderService` (OCP).
+
+| Mã | Luật | Điều kiện áp dụng | Chu kỳ |
+|---|---|---|---|
+| CARE-01 | Tưới nước mùa khô | Cây lâu năm, tháng 12–4 (mùa khô Tây Nguyên) | 20 ngày |
+| CARE-02 | Bón phân mùa mưa | Mọi loại cây, tháng 5–9 (đất đủ ẩm cây mới hấp thụ) | 45 ngày |
+| CARE-03 | Tỉa cành sau thu hoạch | Sau lần thu hoạch gần nhất | 21 ngày |
+| CARE-04 | Thăm vườn kiến thiết cơ bản | Vườn dưới 3 năm tuổi, chưa cho thu hoạch | 30 ngày |
+
+Mùa suy ra từ tháng trong năm chứ không gọi dịch vụ thời tiết: thêm một phụ thuộc mạng vào
+đường đọc chỉ để biết điều mà lịch canh tác đã nói sẵn là không đáng (ADR-12).
+
 Validation hai lớp: **cú pháp** (Bean Validation trên request DTO → 400) và **ngữ nghĩa**
 (bất biến domain → 422). Ràng buộc DB (`CHECK`, `UNIQUE`, `FK`) là lớp phòng thủ cuối.
 
@@ -374,11 +390,37 @@ tối đa 200.
 
 | Tầng | Công cụ | Mục tiêu |
 |---|---|---|
-| Domain | JUnit 5 thuần, không Spring | Bất biến BR-02 → BR-09, BR-12; chính sách niên vụ và luật nhắc việc (`CareRule` nhận `CareContext` dựng sẵn nên test không cần DB) |
-| Application | JUnit 5 + Mockito mock **output port** | Điều phối use case — lợi ích trực tiếp của DIP |
+| Domain | JUnit thuần, không Spring | Bất biến BR-02 → BR-09, BR-12; chính sách niên vụ và luật nhắc việc (`CareRule` nhận `CareContext` dựng sẵn nên test không cần DB) |
+| Application | JUnit + Mockito mock **output port** | Điều phối use case — lợi ích trực tiếp của DIP |
 | Web | `@WebMvcTest` + mock **input port** | Validation, mã HTTP, định dạng `ProblemDetail` |
-| Persistence | `@DataJpaTest` + Testcontainers PostgreSQL | Truy vấn, `@EntityGraph`, migration |
-| Kiến trúc | ArchUnit | Quy tắc phụ thuộc |
+| Integration (`*IT`) | `@IntegrationTest` + Testcontainers PostgreSQL 17 | HTTP thật → DB thật: migration, ràng buộc, JPQL, và **số câu truy vấn** |
+| Ràng buộc DB | `DatabaseConstraintsIT` — SQL thô, đi vòng qua domain | `CHECK`/`UNIQUE`/`FK RESTRICT` thật sự chặn, không chỉ domain chặn |
+| Kiến trúc | ArchUnit, 13 luật | Quy tắc phụ thuộc, cạnh liên module, thời gian qua `Clock`, tiền là `BigDecimal` |
+| Truy vết | `BusinessRuleCoverageTest` | Mọi mã BR/CARE trong tài liệu đều có test, và không test nào bịa ra mã mới |
+| Hợp đồng API | `OpenApiContractIT` | `docs/openapi.json` khớp với đặc tả ứng dụng đang phục vụ (ADR-15) |
+
+Bốn quyết định làm cho bộ test đứng vững theo thời gian:
+
+- **Tách `mvn test` và `mvn verify`.** Test đơn vị (`*Test`) chạy trong surefire, không cần
+  Docker, xong trong vài chục giây. Integration test (`*IT`) chạy trong failsafe. Thiếu Docker
+  thì `*IT` được **bỏ qua kèm lý do** chứ không đổ ra một bức tường stack trace khiến người đọc
+  không phân biệt được "máy thiếu Docker" với "code hỏng".
+- **Một container cho cả bộ test.** Mọi lớp `*IT` khai báo qua đúng một annotation
+  `@IntegrationTest`, nên Spring cache chung một application context — lệch một property là
+  sinh thêm một context và thêm một container PostgreSQL. `DatabaseCleaner` `TRUNCATE ...
+  RESTART IDENTITY` các bảng giao dịch trước mỗi test, giữ lại dữ liệu tham chiếu: không có
+  test nào thừa hưởng dữ liệu của test chạy trước, và id sinh ra lặp lại được.
+- **Đồng hồ do test cầm.** `MutableTestClock` thay `Clock.system()`, nên "đang là mùa khô" trở
+  thành một dòng khai báo. Trước đó hai luật theo mùa (CARE-01, CARE-02) không thể kiểm ở mức
+  API vì chỉ chạy đúng mùa — test sẽ xanh hay đỏ tùy tháng chạy.
+- **Ngưỡng độ phủ trên lõi nghiệp vụ.** JaCoCo yêu cầu `domain` + `application.service` đạt
+  ≥ 80% lệnh và ≥ 70% nhánh (hiện 91,6% / 84,0%). Cố ý không đặt 100%: con số đó chỉ khuyến
+  khích viết test cho getter.
+
+CI (`.github/workflows/build.yml`) chạy `mvnw verify` trên mọi nhánh và pull request. Runner của
+GitHub luôn có Docker nên integration test luôn chạy ở đó — bằng chứng chất lượng không phụ
+thuộc vào việc một máy cá nhân có bật Docker hay không. Bước cuối `git diff --exit-code
+docs/openapi.json` bắt trường hợp hợp đồng API đổi mà chưa được commit.
 
 ---
 
@@ -447,6 +489,22 @@ tối đa 200.
     bản ghi tưới — mà nhà nông vẫn phải ghi nhật ký, nên thêm nút "đã làm" chỉ tạo ra hai
     nguồn sự thật và một bảng phải dọn rác. *Đánh đổi:* chưa hoãn hay tắt được một lời
     nhắc cụ thể. *Xem lại khi:* người dùng phàn nàn về lời nhắc không liên quan lặp lại.
+13. **Dữ liệu demo tách khỏi migration production.** `db/migration` chỉ chứa cấu trúc và dữ
+    liệu *tham chiếu* (danh mục cây trồng — thứ mọi môi trường đều cần). Hai tài khoản chủ
+    nông trại mẫu nằm ở `db/demo`, chỉ được nạp khi cấu hình khai thêm location đó: profile
+    `dev` và integration test. Trộn chung sẽ đẩy tài khoản giả vào cơ sở dữ liệu thật ngay
+    lần triển khai đầu tiên, và xóa sau thì luôn muộn hơn một bước.
+14. **Lọc theo nông trại không phải của mình trả 404, không trả danh sách rỗng.** Trước M5,
+    `/reports` và `/reminders` im lặng trả rỗng trong khi `/plots` trả 404 cho cùng một tình
+    huống — cùng một quy tắc BR-11, hai cách đối xử. "Chưa ghi gì" và "không phải của bạn"
+    là hai câu trả lời khác hẳn nhau; một màn hình trống không nói được điều gì cho người
+    dùng. *Đánh đổi:* thêm đúng một truy vấn khóa chính khi request có `farmId` — trả giá
+    ấy để lấy một hợp đồng API nhất quán là xứng đáng.
+15. **Hợp đồng OpenAPI được version hoá trong repo.** `OpenApiContractIT` sinh
+    `docs/openapi.json` từ ứng dụng đang chạy và so với bản đã commit; lệch thì build đỏ và
+    file mới hiện thành diff. Khóa JSON được sắp xếp trước khi ghi vì springdoc trả mã lỗi
+    theo thứ tự HashMap — không chuẩn hóa thì test đỏ ngẫu nhiên. Đổi tên một trường hay bỏ
+    một mã lỗi là thay đổi phá vỡ phía gọi; từ M6 frontend sinh client từ chính file này.
 
 ---
 
@@ -461,6 +519,6 @@ Sau mỗi mốc, dừng lại để chủ dự án chụp màn hình và đối 
 | M2 | Epic B–C: lứa trồng, xen canh, vòng đời | Swagger: trồng xen, cưa bỏ, lỗi 422 |
 | M3 | Epic D–E: niên vụ, nhật ký hoạt động, thu hoạch | Swagger + test |
 | M4 | Phase 2: báo cáo lãi/lỗ, engine nhắc việc | Kết quả báo cáo |
-| M5 | Phase 3: Testcontainers, ArchUnit, hoàn thiện tài liệu API | Báo cáo test |
+| M5 | Phase 3: củng cố nền test (tách unit/IT, đồng hồ test, dọn dữ liệu), CI, JaCoCo, bù độ phủ, chuẩn hoá lỗi 400, hợp đồng OpenAPI, tách seed demo, Actuator + profile | 247 test xanh, CI xanh, `docs/openapi.json` |
 | M6 | Phase 4: Frontend React + Tailwind | Giao diện |
 | M7 | Docker Compose, cấu hình triển khai | Hệ thống chạy trong container |

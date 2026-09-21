@@ -1,8 +1,10 @@
 package com.hmdao.farm.reminder.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -20,6 +22,7 @@ import com.hmdao.farm.reminder.domain.PostHarvestPruningRule;
 import com.hmdao.farm.reminder.domain.RainySeasonFertilizingRule;
 import com.hmdao.farm.reminder.domain.ReminderSeverity;
 import com.hmdao.farm.reminder.domain.YoungOrchardCheckRule;
+import com.hmdao.farm.shared.domain.ResourceNotFoundException;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -95,10 +98,26 @@ class CareReminderServiceTest {
     @Test
     void br11_scopesEverythingToTheCurrentOwnerAndTheRequestedFarm() {
         farmWithOneMatureAndOneYoungOrchard();
+        when(query.farmBelongsToOwner(OWNER, 7L)).thenReturn(true);
 
         service.list(7L);
 
         verify(query).findActivePlantings(OWNER, 7L);
+    }
+
+    /**
+     * Lọc theo nông trại của người khác phải là 404, không phải danh sách rỗng: "không có việc
+     * gì tới hạn" và "nông trại này không phải của bạn" là hai câu trả lời khác hẳn nhau.
+     */
+    @Test
+    void br11_aFarmThatIsNotMineIsReportedAsNotFoundRatherThanAsAnEmptyList() {
+        when(query.farmBelongsToOwner(OWNER, 7L)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.list(7L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("7");
+
+        verify(query, never()).findActivePlantings(any(), any());
     }
 
     @Test

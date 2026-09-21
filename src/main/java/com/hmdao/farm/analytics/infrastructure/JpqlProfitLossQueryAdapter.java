@@ -39,6 +39,10 @@ interface JpqlProfitLossQueryAdapter extends Repository<Planting, Long>, ProfitL
     List<PlantingProfile> findPlantings(@Param("ownerId") Long ownerId, @Param("farmId") Long farmId);
 
     @Override
+    @Query("select count(f) > 0 from Farm f where f.id = :farmId and f.ownerId = :ownerId")
+    boolean farmBelongsToOwner(@Param("ownerId") Long ownerId, @Param("farmId") Long farmId);
+
+    @Override
     @Query("""
             select new com.hmdao.farm.analytics.application.dto.SeasonCost(
                 s.planting.id, s.year, count(a), sum(a.cost))

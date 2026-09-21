@@ -10,6 +10,7 @@ import com.hmdao.farm.analytics.application.port.in.ProfitLossReportUseCase;
 import com.hmdao.farm.analytics.application.port.out.ProfitLossQueryPort;
 import com.hmdao.farm.analytics.domain.ProfitLossGrouping;
 import com.hmdao.farm.identity.application.port.CurrentUserProvider;
+import com.hmdao.farm.shared.domain.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -52,7 +53,11 @@ class ProfitLossReportService implements ProfitLossReportUseCase {
 
     @Override
     public ProfitLossReport report(ProfitLossCriteria criteria) {
-        List<PlantingProfile> profiles = query.findPlantings(currentUser.currentUserId(), criteria.farmId());
+        Long ownerId = currentUser.currentUserId();
+        if (criteria.farmId() != null && !query.farmBelongsToOwner(ownerId, criteria.farmId())) {
+            throw new ResourceNotFoundException("nông trại", criteria.farmId());
+        }
+        List<PlantingProfile> profiles = query.findPlantings(ownerId, criteria.farmId());
         if (profiles.isEmpty()) {
             return ProfitLossReport.empty(criteria);
         }

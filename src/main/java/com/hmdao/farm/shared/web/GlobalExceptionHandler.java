@@ -6,7 +6,10 @@ import com.hmdao.farm.shared.domain.ResourceConflictException;
 import com.hmdao.farm.shared.domain.ResourceNotFoundException;
 import com.hmdao.farm.shared.domain.UnauthenticatedException;
 import java.net.URI;
+import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,7 +20,11 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
+import org.springframework.beans.TypeMismatchException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import tools.jackson.databind.exc.InvalidFormatException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -84,6 +91,73 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "Thao tác vi phạm ràng buộc dữ liệu: bản ghi bị trùng hoặc vẫn còn dữ liệu phụ thuộc.");
         problem.setType(URI.create(PROBLEM_BASE + "data-integrity"));
         problem.setTitle("Xung đột dữ liệu");
+        return problem;
+    }
+
+    /**
+     * Tham số sai kiểu: {@code ?groupBy=XYZ} hay {@code /plantings/abc}. Mặc định Spring trả
+     * "Failed to convert value of type..." — tiếng Anh, lộ tên lớp nội bộ và không nói ra giá
+     * trị nào mới đúng. Người gọi API cần biết điều cuối cùng đó.
+     */
+    @Override
+    protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        String name = ex instanceof MethodArgumentTypeMismatchException mismatch
+                ? "'" + mismatch.getName() + "'"
+                : "tham số";
+        ProblemDetail problem = badRequest("Tham số không hợp lệ",
+                "Giá trị '%s' không dùng được cho %s.%s".formatted(
+                        ex.getValue(), name, expectedForm(ex.getRequiredType())));
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /**
+     * Thân request không đọc được: JSON sai cú pháp, hoặc enum/ngày sai định dạng. Bean Validation
+     * không bao giờ chạy tới trong trường hợp này vì object còn chưa dựng được, nên nếu không xử
+     * lý riêng thì client nhận một thông điệp của Jackson.
+     */
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        String detail = ex.getCause() instanceof InvalidFormatException invalid
+                ? "Giá trị '%s' không dùng được cho trường '%s'.%s".formatted(
+                        invalid.getValue(), fieldOf(invalid), expectedForm(invalid.getTargetType()))
+                : "Thân request không phải JSON hợp lệ.";
+        ProblemDetail problem = badRequest("Dữ liệu không hợp lệ", detail);
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    private static String fieldOf(InvalidFormatException ex) {
+        return ex.getPath().stream()
+                .map(reference -> reference.getPropertyName() == null
+                        ? "[" + reference.getIndex() + "]"
+                        : reference.getPropertyName())
+                .collect(Collectors.joining("."));
+    }
+
+    /** Nói thẳng dạng giá trị được chấp nhận — với enum là liệt kê đủ, vì danh sách hữu hạn. */
+    private static String expectedForm(Class<?> required) {
+        if (required == null) {
+            return "";
+        }
+        if (required.isEnum()) {
+            return " Giá trị hợp lệ: %s.".formatted(
+                    Arrays.stream(required.getEnumConstants()).map(String::valueOf)
+                            .collect(Collectors.joining(", ")));
+        }
+        if (required == LocalDate.class) {
+            return " Cần ngày dạng YYYY-MM-DD.";
+        }
+        if (Number.class.isAssignableFrom(required) || required.isPrimitive()) {
+            return " Cần một giá trị số.";
+        }
+        return "";
+    }
+
+    private static ProblemDetail badRequest(String title, String detail) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        problem.setType(URI.create(PROBLEM_BASE + "validation"));
+        problem.setTitle(title);
         return problem;
     }
 

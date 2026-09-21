@@ -21,4 +21,11 @@ public interface ProfitLossQueryPort {
     List<SeasonCost> costsByPlantingAndSeason(Collection<Long> plantingIds);
 
     List<SeasonYield> yieldsByPlantingAndSeason(Collection<Long> plantingIds);
+
+    /**
+     * Nông trại được chỉ đích danh có thuộc người gọi không (BR-11). Không có bước này thì lọc
+     * theo nông trại của người khác trả về báo cáo rỗng — trông như "chưa ghi gì" thay vì
+     * "không phải của bạn".
+     */
+    boolean farmBelongsToOwner(Long ownerId, Long farmId);
 }

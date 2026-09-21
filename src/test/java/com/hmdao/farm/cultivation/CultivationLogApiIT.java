@@ -8,7 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.hmdao.farm.TestcontainersConfiguration;
+import com.hmdao.farm.support.IntegrationTest;
+import com.hmdao.farm.support.MutableTestClock;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDate;
@@ -16,9 +17,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -28,10 +26,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
  * và tháng 1 năm sau. Phép thử quan trọng nhất là cả ba mốc đó phải rơi vào <b>cùng một niên vụ</b>
  * (BR-05a) — gom theo năm dương lịch sẽ tách doanh thu tháng 1 khỏi chi phí đã bỏ ra.
  */
-@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-class CultivationLogApiIntegrationTest {
+@IntegrationTest
+class CultivationLogApiIT {
 
     /** Cà phê Robusta trong V2: niên vụ bắt đầu tháng 2. */
     private static final long COFFEE = 1L;
@@ -41,6 +37,9 @@ class CultivationLogApiIntegrationTest {
 
     @Autowired
     EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    MutableTestClock clock;
 
     @Test
     void oneProductionCycleGathersItsCostsAndRevenueEvenAcrossNewYear() throws Exception {
@@ -99,7 +98,7 @@ class CultivationLogApiIntegrationTest {
                 .andExpect(jsonPath("$.rule").value("BR-07"));
 
         // BR-07: ở tương lai
-        mvc.perform(activityRequest(plantingId, "WATERING", LocalDate.now().plusDays(1).toString(), "0"))
+        mvc.perform(activityRequest(plantingId, "WATERING", clock.today().plusDays(1).toString(), "0"))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.rule").value("BR-07"));
 
@@ -147,6 +146,63 @@ class CultivationLogApiIntegrationTest {
                 .andExpect(jsonPath("$[0].activityCount").value(1))
                 .andExpect(jsonPath("$[1].label").value("2025/2026"))
                 .andExpect(jsonPath("$[1].activityCount").value(0));
+    }
+
+    /**
+     * Ghi nhầm rồi sửa là chuyện hằng ngày ở vườn: cân sai một tạ, nhớ nhầm giá bán. Sửa và xóa
+     * phải kéo theo tổng của niên vụ, nếu không thì báo cáo lãi/lỗ nói một đằng, nhật ký nói
+     * một nẻo.
+     */
+    @Test
+    void correctingAndDeletingAHarvestKeepsTheSeasonTotalsHonest() throws Exception {
+        long plantingId = plantCoffee();
+        long harvestId = harvest(plantingId, "2025-11-20", 3000, "72000000");
+
+        mvc.perform(get("/api/v1/plantings/{id}/seasons", plantingId))
+                .andExpect(jsonPath("$[0].totalQuantityKg").value(3000.0))
+                .andExpect(jsonPath("$[0].totalRevenue").value(72_000_000));
+
+        // Cân lại: 2.850 kg, và giá bán thực tế thấp hơn
+        mvc.perform(put("/api/v1/harvests/{id}", harvestId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"harvestDate": "2025-11-20", "quantityKg": 2850, "revenue": 68400000}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantityKg").value(2850.0));
+
+        mvc.perform(get("/api/v1/plantings/{id}/seasons", plantingId))
+                .andExpect(jsonPath("$[0].totalQuantityKg").value(2850.0))
+                .andExpect(jsonPath("$[0].totalRevenue").value(68_400_000))
+                .andExpect(jsonPath("$[0].harvestCount").value(1));
+
+        mvc.perform(delete("/api/v1/harvests/{id}", harvestId)).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/harvests/{id}", harvestId)).andExpect(status().isNotFound());
+
+        mvc.perform(get("/api/v1/plantings/{id}/seasons", plantingId))
+                .andExpect(jsonPath("$[0].harvestCount").value(0))
+                .andExpect(jsonPath("$[0].totalRevenue").value(0));
+    }
+
+    /**
+     * BR-09: lần thu hoạch đầu tiên đưa lứa trồng sang PRODUCING, và xóa lần thu hoạch ấy
+     * <b>không</b> kéo trạng thái ngược về GROWING — vườn đã cho quả rồi thì vẫn là đang cho
+     * quả, bản ghi bị xóa chỉ là một dòng nhập nhầm (ADR-9).
+     */
+    @Test
+    void br09_deletingTheFirstHarvestDoesNotSendTheOrchardBackToGrowing() throws Exception {
+        long plantingId = plantCoffee(false);
+        mvc.perform(get("/api/v1/plantings/{id}", plantingId))
+                .andExpect(jsonPath("$.status").value("GROWING"));
+
+        long harvestId = harvest(plantingId, "2025-11-20", 1200, "28800000");
+        mvc.perform(get("/api/v1/plantings/{id}", plantingId))
+                .andExpect(jsonPath("$.status").value("PRODUCING"));
+
+        mvc.perform(delete("/api/v1/harvests/{id}", harvestId)).andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/v1/plantings/{id}", plantingId))
+                .andExpect(jsonPath("$.status").value("PRODUCING"));
     }
 
     @Test

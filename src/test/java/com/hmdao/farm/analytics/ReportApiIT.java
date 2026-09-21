@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.hmdao.farm.TestcontainersConfiguration;
+import com.hmdao.farm.support.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
@@ -15,9 +15,6 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -30,10 +27,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
  * 2025** cùng với chi phí tháng 6/2025 (BR-13, nhờ BR-05a), và cà phê lỗ vụ 2024 rồi lãi vụ
  * 2025 phải cho ra niên vụ hoàn vốn chứ không phải hai kết luận trái ngược (BR-17).
  */
-@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-class ReportApiIntegrationTest {
+@IntegrationTest
+class ReportApiIT {
 
     private static final long COFFEE = 1L;
     private static final long PEPPER = 3L;
@@ -152,8 +147,10 @@ class ReportApiIntegrationTest {
 
         report("CROP", null).andExpect(status().isOk());
 
-        // 1 kiểm tra user + 1 hồ sơ lứa trồng + 1 GROUP BY chi phí + 1 GROUP BY thu hoạch
-        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(4);
+        // 1 kiểm tra user + 1 kiểm tra nông trại thuộc về mình (BR-11) + 1 hồ sơ lứa trồng
+        // + 1 GROUP BY chi phí + 1 GROUP BY thu hoạch. Con số này KHÔNG tăng theo lượng dữ liệu:
+        // thêm lô, thêm lứa, thêm mười năm lịch sử vẫn đúng ngần ấy câu.
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(5);
     }
 
     @Test
@@ -163,9 +160,11 @@ class ReportApiIntegrationTest {
         // Không lọc thì thấy mọi nông trại của mình — nhánh "farmId is null" của truy vấn
         mvc.perform(get("/api/v1/reports/profit-loss"))
                 .andExpect(jsonPath("$.rows.length()").value(Matchers.greaterThanOrEqualTo(3)));
+        // BR-11: nông trại không phải của mình (hay không tồn tại) là 404, không phải báo cáo
+        // rỗng — "chưa ghi gì" và "không phải của bạn" là hai câu trả lời khác hẳn nhau.
         mvc.perform(get("/api/v1/reports/profit-loss").param("farmId", "999999"))
-                .andExpect(jsonPath("$.rows.length()").value(0))
-                .andExpect(jsonPath("$.total").doesNotExist());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.rule").value("BR-11"));
     }
 
     @Test

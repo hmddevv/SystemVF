@@ -1,8 +1,6 @@
--- Người dùng mẫu cho MVP (chưa có đăng nhập). User 1 là mặc định; user 2 dùng để kiểm tra
--- việc cô lập dữ liệu giữa các chủ nông trại (BR-11) bằng header X-User-Id: 2.
-INSERT INTO app_user (name, email) VALUES
-    ('Chủ nông trại mẫu', 'owner@farm.local'),
-    ('Chủ nông trại thứ hai', 'owner2@farm.local');
+-- Chỉ dữ liệu THAM CHIẾU đi vào đây: thứ mà mọi môi trường, kể cả production, đều cần.
+-- Người dùng mẫu nằm ở classpath:db/demo (xem ADR-13) để không có tài khoản giả nào lọt vào
+-- cơ sở dữ liệu thật.
 
 -- Danh mục cây trồng phổ biến vùng Tây Nguyên / Đông Nam Bộ.
 -- season_start_month là tháng bắt đầu niên vụ theo CHU KỲ SẢN XUẤT (chi phí chăm sóc đi trước

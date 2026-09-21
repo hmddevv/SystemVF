@@ -4,29 +4,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.hmdao.farm.TestcontainersConfiguration;
+import com.hmdao.farm.support.IntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * Kịch bản thực tế: lô cà phê trồng xen hồ tiêu và sầu riêng; hồ tiêu bị cưa bỏ vì sâu bệnh.
  */
-@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-class CultivationApiIntegrationTest {
+@IntegrationTest
+class CultivationApiIT {
 
     @Autowired
     MockMvc mvc;
@@ -69,6 +65,51 @@ class CultivationApiIntegrationTest {
         mvc.perform(delete("/api/v1/plots/{id}", plotId))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("3 lứa trồng (2 đang canh tác)")));
+    }
+
+    /**
+     * Sửa lại lứa trồng nhập sai (BR-02, BR-04). Khai nhầm ngày trồng hay số cây là chuyện
+     * thường; nhưng sửa xong mà ngày trồng vượt qua ngày đã cưa bỏ thì cả vòng đời trở nên vô
+     * nghĩa, nên đó là ranh giới không được phép bước qua.
+     */
+    @Test
+    void br04_correctingAPlantingStaysInsideItsOwnLifetime() throws Exception {
+        long plotId = createPlot();
+        long plantingId = plant(plotId, 1, "2021-06-15", 400, true);
+
+        mvc.perform(put("/api/v1/plantings/{id}", plantingId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"plantingDate": "2021-07-01", "treeCount": 380}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.plantingDate").value("2021-07-01"))
+                .andExpect(jsonPath("$.treeCount").value(380));
+
+        // BR-02: ngày trồng ở tương lai là vô lý
+        mvc.perform(put("/api/v1/plantings/{id}", plantingId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"plantingDate": "2030-01-01", "treeCount": 380}
+                                """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.rule").value("BR-02"));
+
+        mvc.perform(post("/api/v1/plantings/{id}/termination", plantingId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"endDate": "2024-03-10", "reason": "OLD_AGE"}
+                                """))
+                .andExpect(status().isOk());
+
+        // BR-04: sau khi đã cưa bỏ, không thể dời ngày trồng vượt qua ngày kết thúc
+        mvc.perform(put("/api/v1/plantings/{id}", plantingId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"plantingDate": "2024-06-01", "treeCount": 380}
+                                """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.rule").value("BR-04"));
     }
 
     @Test
