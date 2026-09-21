@@ -1,2 +1,6 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# Hop dong API duoc sinh va so sanh tung byte trong OpenApiContractIT.
+# Khong de Windows doi LF thanh CRLF khi checkout, neu khong test se do tren may Windows.
+docs/openapi.json text eol=lf

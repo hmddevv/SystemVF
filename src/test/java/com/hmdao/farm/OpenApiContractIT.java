@@ -34,6 +34,13 @@ class OpenApiContractIT {
 
     private static final Path CONTRACT = Path.of("docs", "openapi.json");
 
+    /**
+     * Hai nguồn CRLF, cùng một cách xử lý: Jackson xuống dòng theo hệ điều hành (CRLF trên
+     * Windows, LF trên runner Linux của CI), và git có thể đổi LF thành CRLF lúc checkout.
+     * Chuẩn hóa cả hai phía về LF, nếu không thì cùng một hợp đồng API vẫn đỏ khi đổi máy.
+     */
+    private static final String CARRIAGE_RETURN = "\r";
+
     @Autowired
     MockMvc mvc;
 
@@ -52,7 +59,7 @@ class OpenApiContractIT {
                     "Chưa có docs/openapi.json — đã sinh ra từ ứng dụng đang chạy. Kiểm tra rồi commit file này.");
         }
 
-        String committed = Files.readString(CONTRACT);
+        String committed = Files.readString(CONTRACT).replace(CARRIAGE_RETURN, "");
         if (!committed.equals(served)) {
             write(served);
             assertThat(served)
@@ -71,7 +78,9 @@ class OpenApiContractIT {
      * tự là một phần của ý nghĩa.
      */
     private String canonicalJson(String raw) {
-        return json.writerWithDefaultPrettyPrinter().writeValueAsString(withSortedKeys(json.readTree(raw))) + "\n";
+        String printed = json.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(withSortedKeys(json.readTree(raw)));
+        return printed.replace(CARRIAGE_RETURN, "") + "\n";
     }
 
     private JsonNode withSortedKeys(JsonNode node) {
