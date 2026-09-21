@@ -1,0 +1,169 @@
+# M6 — Kế hoạch frontend (bản nháp, chưa chốt)
+
+Trạng thái: **chưa duyệt.** Ghi lại để nghiên cứu thêm trước khi bắt tay vào code.
+Năm quyết định ở mục 5 cần chốt trước khi gõ dòng đầu tiên.
+
+---
+
+## 1. Phạm vi thật của M6
+
+`design.md` chỉ có đúng một dòng về frontend — *"React + Tailwind CSS"* — không mô tả màn
+hình nào. Nên phạm vi M6 do ta định nghĩa, và nguồn sự thật đang có là hợp đồng API chốt ở
+M5: **20 đường dẫn, 37 endpoint** trong `docs/openapi.json`.
+
+| Màn hình | Endpoint dùng | Epic |
+|---|---|---|
+| Hôm nay — nhắc việc + ghi nhanh | `GET /reminders`, `POST /plantings/{id}/activities` | F |
+| Sổ nhật ký một lứa trồng | `GET /plantings/{id}/seasons`, `GET /seasons/{id}/activities`, `/harvests`, PUT/DELETE | D, E |
+| Nông trại & lô đất | `/farms`, `/farms/{id}/plots`, `/plots/{id}` | A |
+| Lứa trồng trên một lô (xen canh) | `/plots/{id}/plantings`, `/plantings/{id}`, `/termination`, `/production-start` | B, C |
+| Lãi/lỗ | `GET /reports/profit-loss` | E (Phase 2) |
+| Danh mục cây trồng | `/crops` | — |
+
+---
+
+## 2. Người dùng và việc cần làm
+
+Chủ nông hộ 35–60 tuổi ở Đắk Lắk, vài ha cà phê xen tiêu và sầu riêng.
+
+Dùng ở hai nơi khác hẳn nhau: **điện thoại, ngoài vườn, giữa nắng, tay bẩn**; và **laptop cũ
+ở nhà, buổi tối**.
+
+Hai việc chính, đúng theo thứ tự này:
+
+1. Ghi một dòng nhật ký trong mười giây khi vừa tưới xong.
+2. Tối về xem lô nào đang lời, cây nào đang lỗ.
+
+Thứ tự đó quyết định toàn bộ thiết kế: **đây là cuốn sổ ghi ngoài đồng, không phải dashboard.**
+Mở app ra mà thấy ba ô số to "Tổng doanh thu / Tổng chi phí / Lợi nhuận" là đã đặt việc của
+tối thứ Bảy lên trước việc của chín giờ sáng.
+
+---
+
+## 3. Hệ thống thiết kế
+
+### Màu
+
+| Token | Giá trị | Vai trò |
+|---|---|---|
+| `giay` | `#EFF1EC` | Nền xám pha xanh lá nhạt — đọc được dưới nắng gắt, không phải nền kem |
+| `muc` | `#14201A` | Đen ngả xanh lá cà phê ướt, toàn bộ chữ |
+| `ke` | `#C9CDBE` | Đường kẻ ngang của sổ, 1px |
+| `dat` | `#8A3A1E` | Oxit đất bazan — lỗ, quá hạn |
+| `la` | `#2F6B3C` | Lá — lãi, đã xong |
+| `nang` | `#C98A12` | Chỉ làm nền đánh dấu. Tương phản 2,6:1, **không bao giờ làm màu chữ** |
+
+Bốn token đầu chịu toàn bộ giao diện. `dat` và `la` chỉ xuất hiện ở chỗ nói về tiền và hạn
+việc — nhìn vào là biết ngay đâu là thông tin có hệ quả.
+
+### Chữ
+
+- **Bricolage Grotesque** — tiêu đề và dải niên vụ.
+- **IBM Plex Sans** — nội dung và số, bật `tnum` để cột kg và cột đồng thẳng hàng.
+
+Ràng buộc cứng: **phải phủ đủ dấu tiếng Việt.** Kiểm tra `subset=vietnamese` trước khi dùng;
+hụt thì lùi về Be Vietnam Pro.
+
+### Bố cục: dòng sổ, không phải thẻ
+
+Đơn vị cơ bản là một dòng kẻ ngang chạy hết chiều rộng. Ngày bên trái, việc ở giữa, tiền bên
+phải căn phải như sổ kế toán. Không bo góc, không đổ bóng, không thẻ.
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Lô A2 · Cà phê Robusta              niên vụ 2025/2026        │
+│  ╞═══╪════╪════╪════╪════╪════╪════╪════╪════╪════╪════╡     │
+│   T2   T3   T4  │T5   T6   T7   T8   T9│ T10  T11  T12  T1    │
+│    ·    ●        ░░░░ mùa mưa ░░░░░░░░        ▲    ▲          │
+│                      ▲ hôm nay                thu hoạch       │
+├──────────────────────────────────────────────────────────────┤
+│  HÔM NAY                                                      │
+│  quá hạn 9 ngày   Bón phân đợt 2 · Lô A2          [ Ghi ]     │
+│  ─────────────────────────────────────────────────────────    │
+│  còn 3 ngày       Tỉa cành sau thu · Lô B1        [ Ghi ]     │
+├──────────────────────────────────────────────────────────────┤
+│  15/11   Thu hoạch cà phê   3.200 kg         +76.800.000 đ    │
+│  02/11   Bón phân NPK                           −10.000.000 đ │
+│  28/10   Tưới đợt 3                              −1.800.000 đ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Thứ duy nhất được phép nổi bật là dải niên vụ.** Nó vẽ đúng khái niệm trung tâm của hệ
+thống — niên vụ chứ không phải năm dương lịch — thành một vật thể nhìn thấy được: tháng chạy
+ngang, mùa mưa tô nền, chi phí là vạch dưới đường kẻ, thu hoạch là vạch trên, hôm nay là mũi
+tên. Nhìn một cái hiểu ngay "tiền bỏ ra trước, tiền thu về sau" — điều ba ô số không nói được.
+
+Mọi thứ còn lại im lặng.
+
+### Chuyển động: đúng một khoảnh khắc
+
+Ghi xong một dòng nhật ký thì lời nhắc tương ứng gạch ngang rồi rời khỏi danh sách. Đó là
+BR-18 hiện thành hình: không có nút "đã làm", chính dòng nhật ký làm lời nhắc biến mất.
+Ngoài ra không có hiệu ứng trôi lên khi cuộn, không transition trên từng thẻ.
+
+### Chữ nghĩa
+
+API trả `rule` cho mọi lỗi, nên giao diện dịch mã thành câu nói rõ phải làm gì:
+
+> **BR-10** → "Không xóa được lô đất này: còn 3 lứa trồng đang canh tác. Kết thúc các lứa
+> trồng trước đã."
+
+Nút nói đúng việc nó làm: **Ghi hoạt động** → thông báo **Đã ghi**.
+
+### Đã cân nhắc rồi bỏ
+
+Bản nháp đầu: nền kem `#F4F1EA`, serif tiêu đề to, nhấn màu đất nung, mỗi nông trại một thẻ
+bo góc đổ bóng, hàng KPI ở đầu trang. Bỏ vì hai lý do, lý do thứ hai mới là lý do thật:
+
+1. Đó là bộ mặc định thấy ở mọi trang sinh bằng AI.
+2. **Nó đặt sai việc.** Thẻ tách mỗi lô thành một hòn đảo, trong khi nhà nông cần so sánh các
+   dòng với nhau theo ngày và theo tiền — việc của sổ kẻ dòng. Hàng KPI thì trả lời câu hỏi
+   của buổi tối, đặt trước câu hỏi của buổi sáng.
+
+Cũng bỏ: nền đen với xanh neon, nhãn IN HOA giãn chữ, mốc 01 / 02 / 03 (nhật ký là dòng thời
+gian, không phải quy trình có bước).
+
+---
+
+## 4. Ghi chú kỹ thuật
+
+- **Không phải sửa backend dòng nào.** Dev dùng proxy của Vite (`/api` → `localhost:8080`),
+  M7 dùng nginx cùng origin. Không cần bật CORS.
+- **Chưa có đăng nhập** → cần bộ chọn người dùng ở góc màn hình gửi header `X-User-Id`, đánh
+  dấu rõ là công cụ dev, Phase 5 thay bằng JWT.
+- **Vị trí:** `frontend/` ngay trong repo này, để M7 đóng gói cả hai bằng một `docker compose`.
+- **Định dạng:** `Intl.NumberFormat('vi-VN')` cho tiền; ngày theo giờ `Asia/Ho_Chi_Minh` —
+  cùng múi giờ với `Clock` của backend, nếu không thì "hôm nay" của hai bên lệch nhau.
+- **Lỗi validation** trả về mảng `errors[{field, message}]` → gắn thẳng vào từng ô nhập.
+
+---
+
+## 5. Năm quyết định cần chốt
+
+| # | Câu hỏi | Nghiêng về |
+|---|---|---|
+| 1 | Chia M6 thành M6a (nền tảng + Hôm nay + sổ nhật ký) và M6b (quản lý + báo cáo)? | **Chia đôi** — điểm dừng rơi đúng lúc giao diện đã dùng được thật, thay vì làm xong 6 màn mới biết hướng thiết kế có đúng không |
+| 2 | Tailwind v4 hay v3? | **v4** — bỏ `tailwind.config.js`, khai báo token bằng `@theme` trong CSS; đồng nhất với lựa chọn stack mới ở backend |
+| 3 | Client gọi API sinh tự động từ `docs/openapi.json` hay viết tay? | **Sinh tự động** (`openapi-typescript`) — backend đổi tên một trường là frontend đỏ ngay lúc biên dịch. Đây là lý do ADR-15 tồn tại |
+| 4 | Quản lý trạng thái server | TanStack Query — cache, retry, invalidate sau khi ghi |
+| 5 | Biểu đồ màn lãi/lỗ | Dải niên vụ tự vẽ SVG; biểu đồ luỹ kế theo hướng dẫn của skill `dataviz` |
+
+---
+
+## 6. Công cụ nên dùng trong M6
+
+| Công cụ | Dùng ở đâu | Vì sao |
+|---|---|---|
+| **context7** (MCP) | Trước khi viết cấu hình Tailwind, Vite, TanStack Query | Có hai bộ tài liệu tách biệt cho Tailwind v3 và v4. v4 đổi cách cấu hình tận gốc — đúng loại việc mà trí nhớ mô hình dễ lỗi thời |
+| **chrome-devtools** (MCP + skill) | Suốt quá trình dựng | Tự chụp màn hình để tự phê bình thiết kế, đọc console và network. Bạn chỉ chụp ở điểm dừng để duyệt |
+| **a11y-debugging** (skill) | Cuối mỗi màn | Dùng ngoài nắng, tay bẩn: tương phản màu và vùng chạm ≥44px là điều kiện dùng được, không phải chuyện làm màu |
+| **dataviz** (skill) | Chỉ màn lãi/lỗ | Nạp *trước* dòng code biểu đồ đầu tiên |
+| **ide getDiagnostics** | Sau mỗi lần sửa file | Bắt lỗi TypeScript ngay, không cần chạy build |
+| **fewer-permission-prompts** | Đầu M6 | M6 chạy rất nhiều lệnh `npm`; allowlist để đỡ bị hỏi quyền |
+| **/code-review**, **/security-review** | Cuối M6 | Frontend mở bề mặt mới: XSS, xử lý header danh tính, dữ liệu trong localStorage. **Do bạn gõ**, Claude không tự chạy được |
+| **Playwright** (MCP) | Để sau | Dựng E2E lúc giao diện còn đổi thì sửa test nhiều hơn viết tính năng |
+
+**Không dùng:** claude-in-chrome và Playwright *song song* với chrome-devtools (ba công cụ
+trình duyệt chồng chức năng — chọn một); Artifact (giao diện phải sống trong repo, chạy được
+thật); Claude Docs / Google Drive / docx (không sinh tài liệu rời); subagent (mỗi lần gọi là
+dựng lại ngữ cảnh, trong khi phiên hiện tại đang nắm toàn bộ thiết kế API và bảng quy tắc).
