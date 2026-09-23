@@ -26,7 +26,7 @@ Hướng dẫn cho Claude Code khi làm việc trong repo này. Đọc hết tr�
 | `docs/design.md` | Nghiệp vụ gốc, user story (Epic A–F), ERD, từ điển dữ liệu |
 | `docs/architecture.md` | Module, Ports & Adapters, **bảng quy tắc BR-01…BR-18, CARE-01…04 (§6)**, API (§7), ADR-1…15 (§9), lộ trình (§10) |
 | `docs/openapi.json` | Hợp đồng API — 20 đường dẫn, 37 endpoint. Frontend lấy kiểu dữ liệu từ đây |
-| `docs/m6-frontend-plan.md` | Bản nháp thiết kế frontend (**chưa duyệt**) |
+| `docs/m6-frontend-plan.md` | Kế hoạch frontend M6: phạm vi, quyết định đã chốt, thứ tự làm |
 
 Không chép lại nội dung các file này vào code hay tài liệu khác, chỉ trỏ tới chúng.
 
@@ -83,8 +83,8 @@ Package gốc `com.hmdao.farm`. Modular monolith gồm các module `shared`, `id
 | 409 | `concurrent-update`, `data-integrity` | **không có `rule`** |
 | 422 | `business-rule` | `rule` |
 
-`detail` luôn là tiếng Việt, người dùng đọc được. **Bản nháp M6 viết "API trả `rule` cho mọi lỗi"
-là sai.** Frontend phải hiển thị `detail` làm mặc định, chỉ dùng `rule` / `errors` khi có.
+`detail` luôn là tiếng Việt, người dùng đọc được. **`rule` không có ở mọi lỗi** — frontend hiển
+thị `detail` làm mặc định, chỉ dùng `rule` / `errors` khi có.
 
 ### Định danh (tạm thời, đến Phase 5)
 
@@ -129,46 +129,51 @@ Chạy trong `Farm Management System/`. Trên Windows dùng `./mvnw` qua Git Bas
 - Integration test mới: dùng `@IntegrationTest` (`src/test/.../support`) để chung một context
   và một container. Ngày tháng trong test dùng `MutableTestClock`.
 
-## Frontend (M6) — đang ở giai đoạn kế hoạch
+## Frontend (M6) — kế hoạch đã chốt, chưa code
 
-**Trạng thái:** chỉ có `docs/m6-frontend-plan.md` (bản nháp). Chưa có thư mục `frontend/`.
-**Chưa code gì cho đến khi chủ dự án chốt nốt các quyết định ở §5 của bản kế hoạch**:
+**Nguồn sự thật: `docs/m6-frontend-plan.md`.** Mục 5–6 đã chốt ngày 23/09/2026; mục 3 (màu,
+font, bố cục) chỉ là đề xuất, chốt sau khi chủ dự án chọn mockup. Thứ tự làm và tiêu chí xong ở
+mục 7. Chưa có thư mục `frontend/`.
 
-1. Chia M6a / M6b — *chưa chốt*.
-2. **Tailwind v4 — đã chốt (23/09/2026).** Dùng bản ổn định mới nhất (4.3.x lúc chốt), plugin
-   `@tailwindcss/vite`, token khai báo bằng `@theme` trong CSS, không có `tailwind.config.js`.
-   Hệ quả chấp nhận: cần Safari 16.4+ / Chrome 111+ / Firefox 128+.
-3. Sinh client từ `docs/openapi.json` (`openapi-typescript`) — *chưa chốt*.
-4. TanStack Query — *chưa chốt*.
-5. Cách vẽ biểu đồ lãi/lỗ — *chưa chốt*.
+**Stack:** Vite · React 19 · TypeScript strict · Tailwind v4 (`@tailwindcss/vite`, token bằng
+`@theme`, không có `tailwind.config.js`) · React Router · TanStack Query v5 · `openapi-typescript`
++ `openapi-fetch` · react-hook-form + zod · Radix UI primitives · Vitest + Testing Library + MSW ·
+ESLint + Prettier · Node 24 LTS (`.nvmrc`). Mọi thư viện dùng bản ổn định mới nhất (tag `latest`),
+không beta; ghim bằng `package-lock.json`. Tra cấu hình bản mới qua **context7** trước khi viết.
 
-Nguyên tắc chung về phiên bản: dùng bản ổn định mới nhất (tag `latest` trên npm), không dùng
-bản beta / canary. Ghim phiên bản bằng `package-lock.json`.
+Luật khi code frontend:
 
-Nguyên tắc đã rõ, áp dụng khi bắt đầu code:
-
-- Vị trí: `frontend/` trong repo này, để M7 đóng gói chung bằng Docker Compose.
-- **Kiểu dữ liệu sinh từ file `docs/openapi.json` đã commit**, không lấy từ `/v3/api-docs`
-  (prod tắt). Không viết tay interface cho DTO.
-- Dev: proxy Vite `/api` → `http://localhost:8080`. Không bật CORS ở backend.
-- Header `X-User-Id` đặt ở một chỗ duy nhất trong API client. Bộ chọn người dùng đánh dấu rõ là
-  công cụ dev.
-- Tiền định dạng `Intl.NumberFormat('vi-VN')` (vd. `76.800.000 đ`). Ngày tính theo
-  `Asia/Ho_Chi_Minh`, khớp `Clock` của backend.
-- Mọi chữ trên giao diện là tiếng Việt có dấu. Font phải có subset `vietnamese`.
-- Người dùng dùng điện thoại ngoài nắng: tương phản chữ ≥ 4.5:1, vùng chạm ≥ 44px, mobile-first.
-- Việc quan trọng nhất là **ghi nhật ký trong 10 giây**, không phải dashboard. Không đặt hàng
-  KPI ở đầu trang.
-- Enum hiển thị bằng nhãn tiếng Việt ở một file ánh xạ duy nhất: `ActivityType`, `PlantingStatus`,
-  `EndReason`, `ReminderSeverity` (`OVERDUE`, `DUE_SOON`), `groupBy` (`CROP`, `PLOT`, `PLANTING`).
-- Trước khi cấu hình Tailwind / Vite / TanStack Query thì tra tài liệu bản mới qua **context7**.
-  Kiểm tra giao diện bằng **chrome-devtools** (chụp màn hình, console) và **a11y-debugging**.
+- Vị trí `frontend/` trong repo này. Dev: proxy Vite `/api` → `http://localhost:8080`, không CORS.
+- **Kiểu dữ liệu sinh từ `docs/openapi.json` đã commit**, không lấy từ `/v3/api-docs` (prod tắt),
+  không viết tay interface cho DTO.
+- **Không tự tính niên vụ.** Lấy `startDate` / `endDate` / `label` từ API; không viết lại BR-05a
+  bằng TypeScript.
+- **Thao tác ghi (POST/PUT/DELETE) không tự thử lại** — backend chưa có idempotency key, retry
+  sinh dòng trùng. Gửi lỗi thì giữ nội dung form, hiện "Chưa gửi được" + nút "Gửi lại".
+- Sổ nhật ký: mỗi niên vụ tải hoạt động và thu hoạch với `size=200` rồi trộn theo ngày ở client;
+  còn trang sau thì hiện "tải thêm", không cắt im lặng.
+- Lỗi: gắn `errors[]` vào từng ô; còn lại hiện `detail`. Không tự bịa câu lỗi thay cho `detail`.
+- Header `X-User-Id` đặt ở một chỗ duy nhất trong API client. Bộ chọn người dùng (ghi cứng
+  user 1, 2) đánh dấu rõ là công cụ dev.
+- Tiền: hiển thị `Intl.NumberFormat('vi-VN')` (`76.800.000 đ`); ô nhập là text
+  `inputmode="numeric"`, không dùng `type="number"`. Ngày theo `Asia/Ho_Chi_Minh`, `max` = hôm nay.
+- Loại hoạt động là nút lớn, không dropdown. `OTHER` bắt buộc ghi chú (BR-12).
+- Nhãn tiếng Việt của enum ở **một** file ánh xạ: `ActivityType`, `PlantingStatus`, `EndReason`,
+  `ReminderSeverity` (`OVERDUE`, `DUE_SOON`), `groupBy` (`CROP`, `PLOT`, `PLANTING`).
+- Mọi chữ là tiếng Việt có dấu. Font tự host bằng `@fontsource/*`, subset `vietnamese`.
+- Mobile-first, dùng ngoài nắng: tương phản chữ ≥ 4.5:1, vùng chạm ≥ 44px. Việc quan trọng nhất
+  là **ghi nhật ký trong 10 giây** — không có hàng KPI ở đầu trang.
+- Mọi màn có đủ trạng thái đang tải / lỗi / trống. Màn "Hôm nay" khi chưa có dữ liệu dẫn qua ba
+  bước: tạo nông trại → thêm lô → trồng cây.
+- Kiểm tra giao diện bằng **chrome-devtools** (chụp màn hình, console) và **a11y-debugging**.
   Màn lãi/lỗ phải nạp skill **dataviz** trước khi viết biểu đồ.
+- CI có job `frontend`: file kiểu sinh ra phải khớp `openapi.json` (`git diff --exit-code`),
+  typecheck, lint, test, build đều xanh.
 
 ## Lộ trình còn lại
 
 | Mốc | Nội dung |
 |---|---|
-| M6 | Phase 4: frontend React + Tailwind (đang lập kế hoạch) |
+| M6 | Phase 4: frontend. **M6a**: mockup → `GET /plantings` → dựng `frontend/` → Hôm nay + bắt đầu lần đầu → Sổ nhật ký. **M6b**: quản lý + lãi/lỗ |
 | M7 | Docker Compose cho cả hệ thống (backend + frontend + PostgreSQL), cấu hình triển khai |
 | Phase 5+ | JWT, phân quyền công nhân, giá thị trường, truy xuất nguồn gốc (`design.md` §8) |
