@@ -103,7 +103,9 @@ Ngoài ra không có hiệu ứng trôi lên khi cuộn, không transition trên
 
 ### Chữ nghĩa
 
-API trả `rule` cho mọi lỗi, nên giao diện dịch mã thành câu nói rõ phải làm gì:
+Mọi lỗi đều có `detail` bằng tiếng Việt — đó là thông báo mặc định. `rule` chỉ có ở lỗi nghiệp
+vụ (không có ở 400, `concurrent-update`, `data-integrity`; xem bảng lỗi trong `CLAUDE.md`). Khi có
+`rule`, giao diện có thể nói rõ hơn phải làm gì:
 
 > **BR-10** → "Không xóa được lô đất này: còn 3 lứa trồng đang canh tác. Kết thúc các lứa
 > trồng trước đã."
@@ -143,7 +145,7 @@ gian, không phải quy trình có bước).
 | # | Câu hỏi | Nghiêng về |
 |---|---|---|
 | 1 | Chia M6 thành M6a (nền tảng + Hôm nay + sổ nhật ký) và M6b (quản lý + báo cáo)? | **Chia đôi** — điểm dừng rơi đúng lúc giao diện đã dùng được thật, thay vì làm xong 6 màn mới biết hướng thiết kế có đúng không |
-| 2 | Tailwind v4 hay v3? | **v4** — bỏ `tailwind.config.js`, khai báo token bằng `@theme` trong CSS; đồng nhất với lựa chọn stack mới ở backend |
+| 2 | Tailwind v4 hay v3? | **Đã chốt 23/09/2026: v4**, bản ổn định mới nhất (4.3.x). Bỏ `tailwind.config.js`, khai báo token bằng `@theme` trong CSS; đồng nhất với lựa chọn stack mới ở backend. Chấp nhận yêu cầu Safari 16.4+ / Chrome 111+ |
 | 3 | Client gọi API sinh tự động từ `docs/openapi.json` hay viết tay? | **Sinh tự động** (`openapi-typescript`) — backend đổi tên một trường là frontend đỏ ngay lúc biên dịch. Đây là lý do ADR-15 tồn tại |
 | 4 | Quản lý trạng thái server | TanStack Query — cache, retry, invalidate sau khi ghi |
 | 5 | Biểu đồ màn lãi/lỗ | Dải niên vụ tự vẽ SVG; biểu đồ luỹ kế theo hướng dẫn của skill `dataviz` |
