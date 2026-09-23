@@ -1,0 +1,62 @@
+/* Khung trình bày mockup — KHÔNG thuộc thiết kế. Trung tính để không lẫn với hướng đang xem. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body.mock {
+  margin: 0;
+  background: #E4E5E1;
+  color: #202320;
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.mock-head {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 28px 24px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.mock-head h1 { margin: 0; font-size: 20px; font-weight: 650; }
+.mock-head p { margin: 4px 0 0; max-width: 62ch; color: #4A4D48; }
+.mock-head nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.mock-head a, .mock-head button {
+  color: #202320; font: inherit; background: none; border: 0; padding: 8px 0;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px;
+}
+.screens {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+  display: grid;
+  grid-template-columns: repeat(3, 390px);
+  justify-content: center;
+  gap: 32px;
+  align-items: start;
+}
+.screen-cap { margin: 0 0 10px; font-size: 13px; color: #4A4D48; }
+.phone {
+  width: 390px;
+  min-height: 800px;
+  border-radius: 34px;
+  overflow: hidden;
+  border: 1px solid #BFC1BB;
+  position: relative;
+}
+@media (max-width: 1300px) {
+  .screens { grid-template-columns: repeat(2, 390px); }
+}
+@media (max-width: 880px) {
+  .screens { grid-template-columns: minmax(0, 1fr); padding: 8px 0 40px; gap: 28px; }
+  .screen-cap { padding: 0 16px; }
+  .phone { width: 100%; border-radius: 0; border-left: 0; border-right: 0; min-height: 0; }
+  .mock-head { padding: 20px 16px 4px; }
+}
+.toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px);
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 50;
+}
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+}

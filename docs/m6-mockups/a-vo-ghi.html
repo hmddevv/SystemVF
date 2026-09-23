@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng A: Vở ghi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap&subset=vietnamese" rel="stylesheet">
+<link rel="stylesheet" href="frame.css">
+<style>
+  /* Token hướng A — tương phản đo trên nền --giay: muc 15.6, tim 8.2, dat 7.1, la 6.0, nhat 5.9 */
+  .a {
+    --giay: #F6F7F3;
+    --muc: #1D1C2B;
+    --nhat: #5B5F6E;
+    --ke: #C7D0DD;
+    --le: #D8615A;
+    --tim: #4A3A9C;
+    --tim-nen: #ECE9F7;
+    --dat: #9A2D1C;
+    --la: #2D6A39;
+    --mua: rgba(74, 58, 156, .07);
+    --margin: 68px;
+    background:
+      linear-gradient(to right, transparent calc(var(--margin) - 2px), var(--le) calc(var(--margin) - 2px), var(--le) var(--margin), transparent var(--margin)),
+      var(--giay);
+    color: var(--muc);
+    font: 16px/1.45 "IBM Plex Sans", system-ui, sans-serif;
+    font-feature-settings: "tnum" 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .a h1, .a h2 { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .a h1 { font-size: 34px; line-height: 1.05; }
+  .a h2 { font-size: 19px; line-height: 1.2; font-weight: 500; }
+  .a .top { padding: 52px 20px 18px calc(var(--margin) + 14px); border-bottom: 1px solid var(--ke); }
+  .a .sub { margin: 6px 0 0; color: var(--nhat); font-size: 15px; }
+  .a .sec { padding: 22px 20px 8px calc(var(--margin) + 14px); border-bottom: 1px solid var(--ke); }
+  .a .row {
+    display: grid;
+    grid-template-columns: var(--margin) minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 14px;
+    padding: 12px 16px 12px 0;
+    border-bottom: 1px solid var(--ke);
+    min-height: 64px;
+    overflow: hidden;
+    max-height: 140px;
+    transition: max-height .35s ease, padding .35s ease, opacity .35s ease, border-color .35s;
+  }
+  .a .row > .m { padding: 0 8px; font-size: 13px; line-height: 1.25; text-align: right; color: var(--nhat); }
+  .a .row > .m.late { color: var(--dat); font-weight: 600; }
+  .a .what { font-weight: 500; }
+  .a .where { font-size: 14px; color: var(--nhat); }
+  .a .btn-ghi {
+    min-width: 64px; min-height: 44px; padding: 0 16px;
+    border: 1.5px solid var(--tim); background: transparent; color: var(--tim);
+    font: 600 15px/1 "IBM Plex Sans", sans-serif; border-radius: 4px; cursor: pointer;
+  }
+  .a .row.is-done .what { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--tim); }
+  .a .row.is-done .btn-ghi { visibility: hidden; }
+  .a .row.is-gone { max-height: 0; min-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; border-color: transparent; }
+  .a :focus-visible { outline: 3px solid var(--tim); outline-offset: 2px; }
+
+  .a .other { padding: 18px 16px 18px calc(var(--margin) + 14px); }
+  .a .other button {
+    width: 100%; min-height: 52px; border: 1.5px dashed var(--tim); background: transparent; color: var(--tim);
+    font: 600 16px/1 "IBM Plex Sans", sans-serif; border-radius: 4px; cursor: pointer;
+  }
+  .a .nav {
+    margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--muc); background: var(--giay);
+  }
+  .a .nav a {
+    min-height: 60px; display: grid; place-items: center; color: var(--nhat); text-decoration: none; font-size: 14px; font-weight: 500;
+  }
+  .a .nav a[aria-current="page"] { color: var(--muc); box-shadow: inset 0 3px 0 var(--tim); }
+
+  /* Form ghi */
+  .a form { display: contents; }
+  .a .frow {
+    display: grid; grid-template-columns: var(--margin) minmax(0, 1fr); column-gap: 14px;
+    padding: 14px 16px 14px 0; border-bottom: 1px solid var(--ke);
+  }
+  .a .frow > label, .a .frow > .lab { padding: 10px 8px 0; text-align: right; font-size: 13px; color: var(--nhat); line-height: 1.2; }
+  .a .lab[data-required="true"]::after { content: " bắt buộc"; display: block; color: var(--dat); font-weight: 600; }
+  .a .types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .a .types button {
+    min-height: 64px; border: 1.5px solid var(--ke); background: #fff; color: var(--muc); border-radius: 4px;
+    font: 500 14px/1.2 "IBM Plex Sans", sans-serif; display: grid; justify-items: center; gap: 4px; padding: 8px 4px; cursor: pointer;
+  }
+  .a .types button[aria-pressed="true"] { border-color: var(--tim); background: var(--tim); color: #fff; }
+  .a .ico { width: 24px; height: 24px; }
+  .a input, .a textarea {
+    width: 100%; min-height: 48px; padding: 10px 12px; border: 1.5px solid var(--ke); border-radius: 4px;
+    background: #fff; color: var(--muc); font: 18px/1.3 "IBM Plex Sans", sans-serif; font-feature-settings: "tnum" 1;
+  }
+  .a textarea { min-height: 72px; resize: vertical; }
+  .a input:focus, .a textarea:focus { border-color: var(--tim); outline: none; box-shadow: 0 0 0 3px var(--tim-nen); }
+  .a .money { position: relative; }
+  .a .money span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--nhat); }
+  .a .err { margin: 6px 0 0; color: var(--dat); font-size: 14px; font-weight: 500; }
+  .a .hint { margin: 6px 0 0; color: var(--nhat); font-size: 13px; }
+  .a .submit { padding: 20px 16px 28px calc(var(--margin) + 14px); }
+  .a .submit button {
+    width: 100%; min-height: 56px; border: 0; border-radius: 4px; background: var(--tim); color: #fff;
+    font: 600 17px/1 "IBM Plex Sans", sans-serif; cursor: pointer;
+  }
+  .a .change { color: var(--tim); font-weight: 500; }
+
+  /* Sổ nhật ký */
+  .a .tabs { display: flex; gap: 20px; margin-top: 14px; }
+  .a .tabs button {
+    background: none; border: 0; padding: 10px 0; min-height: 44px; font: 500 15px/1 "IBM Plex Sans", sans-serif;
+    color: var(--nhat); cursor: pointer; border-bottom: 3px solid transparent;
+  }
+  .a .tabs button[aria-selected="true"] { color: var(--muc); border-bottom-color: var(--tim); }
+  .a .strip-wrap { padding: 16px 14px 6px; border-bottom: 1px solid var(--ke); background: var(--giay); }
+  .a .strip { display: block; width: 100%; height: auto; }
+  .a .s-rain { fill: var(--mua); }
+  .a .s-grid { stroke: var(--ke); stroke-width: 1; }
+  .a .s-base { stroke: var(--muc); stroke-width: 1.5; }
+  .a .s-cost { fill: var(--dat); }
+  .a .s-harvest { fill: var(--la); }
+  .a .s-today-line { stroke: var(--tim); stroke-width: 1.5; stroke-dasharray: 3 3; }
+  .a .s-today { fill: var(--tim); font: 600 10px "IBM Plex Sans", sans-serif; }
+  .a .s-month { fill: var(--nhat); font: 11px "IBM Plex Sans", sans-serif; }
+  .a .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 2px 0; font-size: 12px; color: var(--nhat); }
+  .a .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; }
+  .a .sum { padding: 14px 20px 14px calc(var(--margin) + 14px); border-bottom: 1px solid var(--ke); font-size: 15px; }
+  .a .sum b { font-weight: 600; }
+  .a .colhead { display: grid; grid-template-columns: var(--margin) 1fr auto; column-gap: 14px; padding: 8px 16px 6px 0; border-bottom: 1px solid var(--muc); font-size: 12px; color: var(--nhat); }
+  .a .colhead span:first-child { text-align: right; padding: 0 8px; }
+  .a .amt { font-weight: 600; text-align: right; white-space: nowrap; }
+  .a .amt.out { color: var(--dat); }
+  .a .amt.in { color: var(--la); }
+  .a .row.entry { min-height: 58px; }
+
+  .toast.a-toast { background: var(--muc, #1D1C2B); color: #fff; padding: 12px 22px; border-radius: 4px; font: 600 15px "IBM Plex Sans", sans-serif; }
+</style>
+</head>
+<body class="mock">
+  <header class="mock-head">
+    <div>
+      <h1>Hướng A: Vở ghi</h1>
+      <p>Cuốn vở kẻ ngang có lề đỏ mà nhà nông vẫn dùng để ghi chép. Ngày nằm bên trái lề, việc và tiền nằm bên phải, như sổ ghi tay. Màu nhấn là mực tím, chỉ dùng cho nút bấm. Đỏ đất nghĩa là chi tiền hoặc quá hạn, xanh lá nghĩa là tiền thu về.</p>
+    </div>
+    <nav>
+      <a href="index.html">So sánh ba hướng</a>
+      <button type="button" data-reset>Hiện lại lời nhắc</button>
+    </nav>
+  </header>
+
+  <main class="screens">
+    <section>
+      <p class="screen-cap">Hôm nay: bấm "Ghi" ở màn thứ hai để thấy lời nhắc tự biến mất</p>
+      <div class="phone a" id="today">
+        <div class="top">
+          <h1>Hôm nay</h1>
+          <p class="sub" id="today-sub"></p>
+        </div>
+        <div class="sec"><h2>Cần làm</h2></div>
+        <div id="reminders"></div>
+        <div class="other"><button type="button">Ghi việc khác</button></div>
+        <nav class="nav" aria-label="Chính">
+          <a href="#" aria-current="page">Hôm nay</a><a href="#">Sổ</a><a href="#">Vườn</a><a href="#">Lãi lỗ</a>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <p class="screen-cap">Ghi hoạt động: mở từ lời nhắc "Bón phân" của Lô A2</p>
+      <div class="phone a">
+        <form data-log-form data-default-type="FERTILIZING" data-target-reminder="r1" novalidate>
+          <div class="top">
+            <h1>Ghi hoạt động</h1>
+            <p class="sub">Lô A2, Cà phê Robusta. <a href="#" class="change">Đổi cây</a></p>
+          </div>
+          <div class="frow">
+            <span class="lab">Việc</span>
+            <div>
+              <div class="types" id="types" role="group" aria-label="Loại việc"></div>
+              <p class="err" data-err-type hidden>Chọn việc vừa làm.</p>
+            </div>
+          </div>
+          <div class="frow">
+            <label for="a-date">Ngày</label>
+            <div>
+              <input id="a-date" type="date" value="2026-09-23" max="2026-09-23">
+              <p class="hint">Không chọn được ngày sau hôm nay.</p>
+            </div>
+          </div>
+          <div class="frow">
+            <label for="a-cost">Tiền</label>
+            <div class="money">
+              <input id="a-cost" data-money inputmode="numeric" autocomplete="off" placeholder="0" value="12.600.000">
+              <span>đ</span>
+            </div>
+          </div>
+          <div class="frow">
+            <label for="a-note" class="lab" data-note-label>Ghi chú</label>
+            <div>
+              <textarea id="a-note" data-note placeholder="Loại phân, số bao, thuê mấy công…">NPK 16-16-8, 500 kg, đợt 3</textarea>
+              <p class="err" data-err-note hidden>Việc khác cần ghi rõ đã làm gì.</p>
+            </div>
+          </div>
+          <div class="submit"><button type="submit">Ghi hoạt động</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section>
+      <p class="screen-cap">Sổ nhật ký một lứa trồng: đổi niên vụ để xem mùa đã thu hoạch</p>
+      <div class="phone a">
+        <div class="top">
+          <h1>Lô A2</h1>
+          <p class="sub">Cà phê Robusta, trồng 2021, 1.100 cây. Trồng xen với hồ tiêu.</p>
+          <div class="tabs" role="tablist" aria-label="Niên vụ">
+            <button role="tab" data-season-tab="2026" aria-selected="true">2026/2027</button>
+            <button role="tab" data-season-tab="2025" aria-selected="false">2025/2026</button>
+          </div>
+        </div>
+        <div class="strip-wrap">
+          <div id="strip"></div>
+          <div class="legend">
+            <span><i style="background:var(--dat)"></i>Chi phí</span>
+            <span><i style="background:var(--la)"></i>Thu hoạch</span>
+            <span><i style="background:var(--mua);outline:1px solid var(--ke)"></i>Mùa mưa</span>
+          </div>
+        </div>
+        <p class="sum" id="sum"></p>
+        <div class="colhead"><span>Ngày</span><span>Việc</span><span>Số tiền (đ)</span></div>
+        <div id="entries"></div>
+        <nav class="nav" aria-label="Chính">
+          <a href="#">Hôm nay</a><a href="#" aria-current="page">Sổ</a><a href="#">Vườn</a><a href="#">Lãi lỗ</a>
+        </nav>
+      </div>
+    </section>
+  </main>
+  <div class="toast a-toast" data-toast role="status" aria-live="polite"></div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  var F = Farm;
+  document.getElementById('today-sub').textContent = F.fmtTodayLong() + '. ' + F.farm.name + ', ' + F.farm.location;
+
+  document.getElementById('reminders').innerHTML = F.reminders.map(function (r) {
+    var late = r.severity === 'OVERDUE';
+    var when = late ? 'quá<br>' + r.daysOverdue + ' ngày' : 'còn<br>' + (-r.daysOverdue) + ' ngày';
+    return '<div class="row" data-reminder="' + r.id + '">' +
+      '<div class="m' + (late ? ' late' : '') + '">' + when + '</div>' +
+      '<div><div class="what">' + r.title + '</div><div class="where">' + r.plotName + ', ' + r.cropName + '</div></div>' +
+      '<button class="btn-ghi" type="button">Ghi</button></div>';
+  }).join('');
+
+  document.getElementById('types').innerHTML = Object.keys(F.ACTIVITY).map(function (k) {
+    return '<button type="button" data-type="' + k + '" aria-pressed="false">' + F.icon(k) + F.ACTIVITY[k] + '</button>';
+  }).join('');
+
+  F.bindSeasonTabs(document, function (key) {
+    var s = F.seasons[key], t = F.totals(s);
+    document.getElementById('strip').innerHTML = F.seasonStrip(s, { barWidth: 5 });
+    document.getElementById('sum').innerHTML = t.revenue
+      ? 'Chi <b>' + F.fmtMoney(t.cost) + '</b>, thu <b>' + F.fmtMoney(t.revenue) + '</b> từ ' + t.qty.toLocaleString('vi-VN') + ' kg. Lãi <b style="color:var(--la)">' + F.fmtMoney(t.net) + '</b>.'
+      : 'Đã chi <b>' + F.fmtMoney(t.cost) + '</b> từ tháng 2. Chưa thu hoạch: tiền bỏ ra trước, thu về cuối năm.';
+    document.getElementById('entries').innerHTML = s.entries.map(function (e) {
+      var act = e.kind === 'activity';
+      var what = act ? F.ACTIVITY[e.type] : 'Thu hoạch ' + e.qty.toLocaleString('vi-VN') + ' kg';
+      var note = act ? e.note : 'Bán nhân xô';
+      var amt = act ? '<span class="amt out">−' + e.cost.toLocaleString('vi-VN') + '</span>'
+                    : '<span class="amt in">+' + e.revenue.toLocaleString('vi-VN') + '</span>';
+      return '<div class="row entry"><div class="m">' + F.fmtDay(e.date) + '</div>' +
+        '<div><div class="what">' + what + '</div><div class="where">' + note + '</div></div>' + amt + '</div>';
+    }).join('');
+  });
+
+  F.bindLogForm(document);
+  F.bindReset(document);
+})();
+</script>
+</body>
+</html>

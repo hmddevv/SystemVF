@@ -1,0 +1,62 @@
+@import 'tailwindcss';
+
+/*
+ * Token thiết kế — nguồn: docs/m6-frontend-plan.md mục 3.
+ * Tailwind v4 khai báo token ngay trong CSS (không có tailwind.config.js).
+ * `--color-*: initial` bỏ bảng màu mặc định của Tailwind: chỉ dùng được màu của hệ thống này.
+ * `static`: luôn xuất đủ biến CSS — màu cây được gọi qua var(--color-…) trong JS, Tailwind không
+ * thấy trong class nên mặc định sẽ lược bỏ.
+ *
+ * Tương phản chữ (WCAG) trên bg / panel / panel2:
+ *   ink 15.5/13.7/12.5 · muted 6.7/6.0/5.5 · leaf 7.9/7.1/6.4 · harvest 8.7/7.7/7.0
+ *   clay 5.1/4.6/4.2 → KHÔNG làm chữ trên panel2 · leafdeep 3.5 → chỉ làm màu tô, không làm chữ
+ */
+@theme static {
+  --color-*: initial;
+  --color-bg: #10170f;
+  --color-panel: #19231a;
+  --color-panel2: #1f2b1e;
+  --color-line: #2e3a2b;
+  --color-ink: #e9eee3;
+  --color-muted: #93a288;
+  --color-leaf: #6fbe4f;
+  --color-leafdeep: #3c7a31;
+  --color-harvest: #e3a930;
+  --color-clay: #d9663d;
+  --color-sky: #5ba7c6;
+  --color-pepper: #b98a5a;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-display: 'Bitter Variable', Georgia, serif;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  /* Số liệu luôn thẳng cột */
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-leaf);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}

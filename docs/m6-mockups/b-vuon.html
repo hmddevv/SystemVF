@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng B: Vườn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap&subset=vietnamese" rel="stylesheet">
+<link rel="stylesheet" href="frame.css">
+<style>
+  /* Token hướng B — tương phản trên nền trắng: muc 16.3, la 8.2, qua 6.9, nhat 6.3; chữ trắng trên la 8.2 */
+  .b {
+    --nen: #F3F6F0;
+    --mat: #FFFFFF;
+    --muc: #17231B;
+    --nhat: #56635A;
+    --vien: #DCE4D6;
+    --la: #1E5A38;
+    --la-nhat: #E3ECDF;
+    --qua: #A3312B;
+    --qua-nhat: #F6E4E1;
+    --hat: #6B4A33;
+    --mua: rgba(30, 90, 56, .08);
+    background: var(--nen);
+    color: var(--muc);
+    font: 16px/1.5 "Be Vietnam Pro", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    flex-direction: column;
+  }
+  .b h1, .b h2, .b h3 { margin: 0; }
+  .b h1 { font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
+  .b .top { padding: 56px 20px 16px; }
+  .b .date { margin: 0 0 4px; color: var(--nhat); font-size: 15px; }
+  .b .group { margin: 8px 16px 18px; }
+  .b .group h2 { font-size: 15px; font-weight: 600; margin: 0 4px 8px; }
+  .b .group h2.late { color: var(--qua); }
+  .b .list { background: var(--mat); border-radius: 18px; border: 1px solid var(--vien); overflow: hidden; }
+  .b .item {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+    padding: 12px 12px 12px 14px; position: relative; max-height: 140px; overflow: hidden;
+    transition: max-height .35s ease, padding .35s ease, opacity .35s ease;
+  }
+  .b .item + .item::before { content: ""; position: absolute; top: 0; left: 70px; right: 0; border-top: 1px solid var(--vien); }
+  .b .bubble { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--la-nhat); color: var(--la); }
+  .b .bubble.late { background: var(--qua-nhat); color: var(--qua); }
+  .b .ico { width: 22px; height: 22px; }
+  .b .t { font-weight: 600; font-size: 16px; line-height: 1.3; }
+  .b .s { font-size: 14px; color: var(--nhat); }
+  .b .when { font-size: 13px; font-weight: 600; color: var(--nhat); }
+  .b .when.late { color: var(--qua); }
+  .b .pill {
+    min-height: 44px; min-width: 60px; padding: 0 18px; border-radius: 999px; border: 0; cursor: pointer;
+    background: var(--la); color: #fff; font: 600 15px/1 "Be Vietnam Pro", sans-serif;
+  }
+  .b .item.is-done .t { text-decoration: line-through; text-decoration-thickness: 2px; }
+  .b .item.is-done .pill { visibility: hidden; }
+  .b .item.is-gone { max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; }
+  .b :focus-visible { outline: 3px solid var(--la); outline-offset: 2px; }
+
+  .b .fab-wrap { margin-top: auto; padding: 12px 16px; }
+  .b .fab {
+    width: 100%; min-height: 56px; border-radius: 999px; border: 1.5px solid var(--la); background: var(--mat); color: var(--la);
+    font: 600 16px/1 "Be Vietnam Pro", sans-serif; display: flex; gap: 8px; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .b .nav { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--mat); border-top: 1px solid var(--vien); padding: 6px 4px 14px; }
+  .b .nav a { min-height: 56px; display: grid; justify-items: center; align-content: center; gap: 2px; text-decoration: none; color: var(--nhat); font-size: 12px; font-weight: 500; }
+  .b .nav a span.ind { width: 56px; height: 30px; border-radius: 15px; display: grid; place-items: center; }
+  .b .nav a[aria-current="page"] { color: var(--muc); font-weight: 600; }
+  .b .nav a[aria-current="page"] span.ind { background: var(--la-nhat); color: var(--la); }
+
+  /* Bảng ghi dạng tấm trượt */
+  .b.sheet-host { background: #9AA59C; }
+  .b .behind { padding: 56px 20px 0; color: #2A332C; opacity: .55; }
+  .b .sheet { margin-top: 24px; background: var(--mat); border-radius: 28px 28px 0 0; padding: 10px 20px 28px; flex: 1; }
+  .b .handle { width: 40px; height: 4px; border-radius: 2px; background: var(--vien); margin: 0 auto 14px; }
+  .b .sheet h2 { font-size: 22px; font-weight: 700; }
+  .b .target { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 18px; padding: 10px 14px; background: var(--nen); border-radius: 14px; }
+  .b .target b { font-weight: 600; }
+  .b .target a { color: var(--la); font-weight: 600; font-size: 14px; min-height: 44px; display: grid; place-items: center; }
+  .b form { display: block; }
+  .b .flabel { display: block; font-size: 14px; font-weight: 600; margin: 0 2px 8px; }
+  .b .flabel[data-required="true"]::after { content: " (bắt buộc)"; color: var(--qua); }
+  .b .types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+  .b .types button {
+    min-height: 76px; border-radius: 16px; border: 1.5px solid var(--vien); background: var(--mat); color: var(--muc);
+    font: 500 14px/1.2 "Be Vietnam Pro", sans-serif; display: grid; justify-items: center; align-content: center; gap: 6px; cursor: pointer;
+  }
+  .b .types button .ico { width: 26px; height: 26px; color: var(--la); }
+  .b .types button[aria-pressed="true"] { background: var(--la); border-color: var(--la); color: #fff; }
+  .b .types button[aria-pressed="true"] .ico { color: #fff; }
+  .b .two { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; margin-bottom: 18px; }
+  .b input, .b textarea {
+    width: 100%; min-height: 52px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--vien); background: var(--nen);
+    font: 17px/1.3 "Be Vietnam Pro", sans-serif; color: var(--muc); font-variant-numeric: tabular-nums;
+  }
+  .b textarea { min-height: 64px; resize: vertical; }
+  .b input:focus, .b textarea:focus { outline: none; border-color: var(--la); background: var(--mat); }
+  .b .money { position: relative; }
+  .b .money span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--nhat); }
+  .b .err { margin: 6px 2px 0; color: var(--qua); font-size: 14px; font-weight: 500; }
+  .b .submit {
+    width: 100%; min-height: 56px; margin-top: 20px; border-radius: 999px; border: 0; background: var(--la); color: #fff;
+    font: 600 17px/1 "Be Vietnam Pro", sans-serif; cursor: pointer;
+  }
+
+  /* Sổ nhật ký */
+  .b .back { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; color: var(--la); font-weight: 600; font-size: 15px; text-decoration: none; margin-bottom: 4px; }
+  .b .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--la-nhat); border-radius: 14px; padding: 4px; margin: 14px 16px 12px; }
+  .b .seg button { min-height: 44px; border-radius: 11px; border: 0; background: transparent; font: 500 15px/1 "Be Vietnam Pro", sans-serif; color: var(--nhat); cursor: pointer; }
+  .b .seg button[aria-selected="true"] { background: var(--mat); color: var(--muc); font-weight: 600; }
+  .b .card { background: var(--mat); border: 1px solid var(--vien); border-radius: 20px; margin: 0 16px 16px; padding: 16px 14px 12px; }
+  .b .card p { margin: 0 2px 12px; font-size: 15px; }
+  .b .strip { display: block; width: 100%; height: auto; }
+  .b .s-rain { fill: var(--mua); }
+  .b .s-grid { stroke: var(--vien); stroke-width: 1; }
+  .b .s-base { stroke: var(--nhat); stroke-width: 1; }
+  .b .s-cost { fill: var(--hat); }
+  .b .s-harvest { fill: var(--la); }
+  .b .s-today-line { stroke: var(--qua); stroke-width: 1.5; }
+  .b .s-today { fill: var(--qua); font: 600 10px "Be Vietnam Pro", sans-serif; }
+  .b .s-month { fill: var(--nhat); font: 11px "Be Vietnam Pro", sans-serif; }
+  .b .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 2px 0; font-size: 12px; color: var(--nhat); }
+  .b .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .b .amt { font-weight: 600; white-space: nowrap; text-align: right; }
+  .b .amt.in { color: var(--la); }
+  .b .month-h { font-size: 14px; font-weight: 600; color: var(--nhat); margin: 0 4px 8px; }
+
+  .toast.b-toast { background: #17231B; color: #fff; padding: 12px 24px; border-radius: 999px; font: 600 15px "Be Vietnam Pro", sans-serif; }
+</style>
+</head>
+<body class="mock">
+  <header class="mock-head">
+    <div>
+      <h1>Hướng B: Vườn</h1>
+      <p>Kiểu ứng dụng điện thoại hiện đại: nhóm danh sách bo góc, tấm trượt từ dưới lên, thanh điều hướng có biểu tượng. Màu lấy từ trái cà phê: lá xanh cho nút bấm và tiền thu, quả chín đỏ cho việc quá hạn, hạt rang nâu cho chi phí. Font Be Vietnam Pro, do người Việt thiết kế cho tiếng Việt.</p>
+    </div>
+    <nav>
+      <a href="index.html">So sánh ba hướng</a>
+      <button type="button" data-reset>Hiện lại lời nhắc</button>
+    </nav>
+  </header>
+
+  <main class="screens">
+    <section>
+      <p class="screen-cap">Hôm nay: bấm "Ghi" ở màn thứ hai để thấy lời nhắc tự biến mất</p>
+      <div class="phone b">
+        <div class="top">
+          <p class="date" id="b-date"></p>
+          <h1>Hôm nay có 4 việc cần làm</h1>
+        </div>
+        <div id="b-groups"></div>
+        <div class="fab-wrap"><button class="fab" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Ghi việc khác</button></div>
+        <nav class="nav" aria-label="Chính" id="b-nav1"></nav>
+      </div>
+    </section>
+
+    <section>
+      <p class="screen-cap">Ghi hoạt động: tấm trượt mở từ lời nhắc "Bón phân" của Lô A2</p>
+      <div class="phone b sheet-host">
+        <div class="behind"><p class="date">Thứ Tư, 23 tháng 9</p><h1>Hôm nay có 4 việc cần làm</h1></div>
+        <div class="sheet">
+          <div class="handle"></div>
+          <form data-log-form data-default-type="FERTILIZING" data-target-reminder="r1" novalidate>
+            <h2>Ghi hoạt động</h2>
+            <div class="target"><span><b>Lô A2</b>, Cà phê Robusta</span><a href="#">Đổi</a></div>
+            <span class="flabel" id="b-type-l">Đã làm việc gì</span>
+            <div class="types" id="b-types" role="group" aria-labelledby="b-type-l"></div>
+            <p class="err" data-err-type hidden>Chọn việc vừa làm.</p>
+            <div class="two">
+              <div><label class="flabel" for="b-date-in">Ngày</label><input id="b-date-in" type="date" value="2026-09-23" max="2026-09-23"></div>
+              <div><label class="flabel" for="b-cost">Tiền chi</label><div class="money"><input id="b-cost" data-money inputmode="numeric" autocomplete="off" placeholder="0" value="12.600.000"><span>đ</span></div></div>
+            </div>
+            <label class="flabel" for="b-note" data-note-label>Ghi chú</label>
+            <textarea id="b-note" data-note placeholder="Loại phân, số bao, thuê mấy công…">NPK 16-16-8, 500 kg, đợt 3</textarea>
+            <p class="err" data-err-note hidden>Việc khác cần ghi rõ đã làm gì.</p>
+            <button class="submit" type="submit">Ghi hoạt động</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="screen-cap">Sổ nhật ký một lứa trồng: đổi niên vụ để xem mùa đã thu hoạch</p>
+      <div class="phone b">
+        <div class="top">
+          <a class="back" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Lô A2</a>
+          <h1>Cà phê Robusta</h1>
+          <p class="date" style="margin-top:4px">Trồng 2021, 1.100 cây. Trồng xen với hồ tiêu.</p>
+        </div>
+        <div class="seg" role="tablist" aria-label="Niên vụ">
+          <button role="tab" data-season-tab="2026" aria-selected="true">Niên vụ 2026/2027</button>
+          <button role="tab" data-season-tab="2025" aria-selected="false">2025/2026</button>
+        </div>
+        <div class="card">
+          <p id="b-sum"></p>
+          <div id="b-strip"></div>
+          <div class="legend">
+            <span><i style="background:var(--hat)"></i>Chi phí</span>
+            <span><i style="background:var(--la)"></i>Thu hoạch</span>
+            <span><i style="background:var(--mua);outline:1px solid var(--vien)"></i>Mùa mưa</span>
+          </div>
+        </div>
+        <div id="b-entries"></div>
+        <nav class="nav" aria-label="Chính" id="b-nav3" style="margin-top:auto"></nav>
+      </div>
+    </section>
+  </main>
+  <div class="toast b-toast" data-toast role="status" aria-live="polite"></div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  var F = Farm;
+  document.getElementById('b-date').textContent = F.fmtTodayLong();
+
+  function item(r) {
+    var late = r.severity === 'OVERDUE';
+    var when = late ? 'Quá ' + r.daysOverdue + ' ngày' : 'Còn ' + (-r.daysOverdue) + ' ngày';
+    return '<div class="item" data-reminder="' + r.id + '">' +
+      '<span class="bubble' + (late ? ' late' : '') + '">' + F.icon(r.suggestedActivity) + '</span>' +
+      '<div><div class="t">' + r.title + '</div><div class="s">' + r.plotName + ', ' + r.cropName + '</div>' +
+      '<div class="when' + (late ? ' late' : '') + '">' + when + '</div></div>' +
+      '<button class="pill" type="button">Ghi</button></div>';
+  }
+  var late = F.reminders.filter(function (r) { return r.severity === 'OVERDUE'; });
+  var soon = F.reminders.filter(function (r) { return r.severity !== 'OVERDUE'; });
+  document.getElementById('b-groups').innerHTML =
+    '<div class="group"><h2 class="late">Quá hạn</h2><div class="list">' + late.map(item).join('') + '</div></div>' +
+    '<div class="group"><h2>Sắp đến hạn</h2><div class="list">' + soon.map(item).join('') + '</div></div>';
+
+  var navIcons = {
+    today: '<path d="M4 7h16v13H4z"/><path d="M4 11h16M9 4v5M15 4v5"/>',
+    log: '<path d="M6 4h11a1 1 0 0 1 1 1v15H7a1 1 0 0 1-1-1z"/><path d="M9 9h6M9 13h6"/>',
+    farm: '<path d="M3 20h18"/><path d="M6 20c0-5 2-8 6-10 4 2 6 5 6 10"/><path d="M12 10V4"/>',
+    pl: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'
+  };
+  function nav(active) {
+    return [['today', 'Hôm nay'], ['log', 'Sổ'], ['farm', 'Vườn'], ['pl', 'Lãi lỗ']].map(function (n) {
+      return '<a href="#"' + (n[0] === active ? ' aria-current="page"' : '') + '><span class="ind"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + navIcons[n[0]] + '</svg></span>' + n[1] + '</a>';
+    }).join('');
+  }
+  document.getElementById('b-nav1').innerHTML = nav('today');
+  document.getElementById('b-nav3').innerHTML = nav('log');
+
+  document.getElementById('b-types').innerHTML = Object.keys(F.ACTIVITY).map(function (k) {
+    return '<button type="button" data-type="' + k + '" aria-pressed="false">' + F.icon(k) + F.ACTIVITY[k] + '</button>';
+  }).join('');
+
+  F.bindSeasonTabs(document, function (key) {
+    var s = F.seasons[key], t = F.totals(s);
+    document.getElementById('b-strip').innerHTML = F.seasonStrip(s, { barWidth: 6 });
+    document.getElementById('b-sum').innerHTML = t.revenue
+      ? 'Chi ' + F.fmtMoney(t.cost) + ', thu ' + F.fmtMoney(t.revenue) + '. <b style="color:var(--la)">Lãi ' + F.fmtMoney(t.net) + '</b>'
+      : 'Đã chi <b>' + F.fmtMoney(t.cost) + '</b>. Chưa đến mùa thu hoạch.';
+    var byMonth = [], cur = null;
+    s.entries.forEach(function (e) {
+      var m = e.date.slice(0, 7);
+      if (!cur || cur.m !== m) { cur = { m: m, items: [] }; byMonth.push(cur); }
+      cur.items.push(e);
+    });
+    document.getElementById('b-entries').innerHTML = byMonth.map(function (g) {
+      var label = 'Tháng ' + (+g.m.slice(5)) + ', ' + g.m.slice(0, 4);
+      return '<div class="group"><h3 class="month-h">' + label + '</h3><div class="list">' + g.items.map(function (e) {
+        var act = e.kind === 'activity';
+        var ic = act ? F.icon(e.type) : F.icon('HARVEST');
+        var t = act ? F.ACTIVITY[e.type] : 'Thu hoạch ' + e.qty.toLocaleString('vi-VN') + ' kg';
+        var sub = F.fmtDay(e.date) + (act ? ', ' + e.note : ', bán nhân xô');
+        var amt = act ? '<span class="amt">−' + F.fmtMoney(e.cost) + '</span>' : '<span class="amt in">+' + F.fmtMoney(e.revenue) + '</span>';
+        return '<div class="item"><span class="bubble">' + ic + '</span><div><div class="t">' + t + '</div><div class="s">' + sub + '</div></div>' + amt + '</div>';
+      }).join('') + '</div></div>';
+    }).join('');
+  });
+
+  F.bindLogForm(document);
+  F.bindReset(document);
+})();
+</script>
+</body>
+</html>

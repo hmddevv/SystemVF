@@ -129,51 +129,51 @@ Chạy trong `Farm Management System/`. Trên Windows dùng `./mvnw` qua Git Bas
 - Integration test mới: dùng `@IntegrationTest` (`src/test/.../support`) để chung một context
   và một container. Ngày tháng trong test dùng `MutableTestClock`.
 
-## Frontend (M6) — kế hoạch đã chốt, chưa code
+## Frontend (M6) — phương án 2, nền tối, mở vào Tổng quan
 
-**Nguồn sự thật: `docs/m6-frontend-plan.md`.** Mục 5–6 đã chốt ngày 23/09/2026; mục 3 (màu,
-font, bố cục) chỉ là đề xuất, chốt sau khi chủ dự án chọn mockup. Thứ tự làm và tiêu chí xong ở
-mục 7. Chưa có thư mục `frontend/`.
+**Nguồn sự thật: `docs/m6-frontend-plan.md`** — mục 0 (điều chỉnh phương án 2), mục 3 (token
+màu, font, bố cục), mục 6 (luật đã chốt), mục 7 (thứ tự làm). Code nằm ở `frontend/`.
 
-**Stack:** Vite · React 19 · TypeScript strict · Tailwind v4 (`@tailwindcss/vite`, token bằng
-`@theme`, không có `tailwind.config.js`) · React Router · TanStack Query v5 · `openapi-typescript`
-+ `openapi-fetch` · react-hook-form + zod · Radix UI primitives · Vitest + Testing Library + MSW ·
-ESLint + Prettier · Node 24 LTS (`.nvmrc`). Mọi thư viện dùng bản ổn định mới nhất (tag `latest`),
-không beta; ghim bằng `package-lock.json`. Tra cấu hình bản mới qua **context7** trước khi viết.
+**Stack:** Vite · React 19 · **JavaScript (JSX)** · Tailwind v4 (`@tailwindcss/vite`, token bằng
+`@theme` trong `src/index.css`, không có `tailwind.config.js`) · React Router · TanStack Query v5
+· axios · react-hook-form + zod · Vitest + Testing Library + MSW · ESLint + Prettier ·
+Node 24 LTS (`.nvmrc`). Mọi thư viện dùng bản ổn định mới nhất; ghim bằng `package-lock.json`.
+Tra cấu hình bản mới qua **context7** trước khi viết.
+
+Cấu trúc: `src/components/` (tái sử dụng) · `src/pages/` (một file một màn) · `src/services/`
+(**nơi duy nhất gọi HTTP và biết tên trường API**) · `src/hooks/` (bọc TanStack Query).
 
 Luật khi code frontend:
 
-- Vị trí `frontend/` trong repo này. Dev: proxy Vite `/api` → `http://localhost:8080`, không CORS.
-- **Kiểu dữ liệu sinh từ `docs/openapi.json` đã commit**, không lấy từ `/v3/api-docs` (prod tắt),
-  không viết tay interface cho DTO.
-- **Không tự tính niên vụ.** Lấy `startDate` / `endDate` / `label` từ API; không viết lại BR-05a
-  bằng TypeScript.
-- **Thao tác ghi (POST/PUT/DELETE) không tự thử lại** — backend chưa có idempotency key, retry
-  sinh dòng trùng. Gửi lỗi thì giữ nội dung form, hiện "Chưa gửi được" + nút "Gửi lại".
-- Sổ nhật ký: mỗi niên vụ tải hoạt động và thu hoạch với `size=200` rồi trộn theo ngày ở client;
-  còn trang sau thì hiện "tải thêm", không cắt im lặng.
-- Lỗi: gắn `errors[]` vào từng ô; còn lại hiện `detail`. Không tự bịa câu lỗi thay cho `detail`.
-- Header `X-User-Id` đặt ở một chỗ duy nhất trong API client. Bộ chọn người dùng (ghi cứng
-  user 1, 2) đánh dấu rõ là công cụ dev.
-- Tiền: hiển thị `Intl.NumberFormat('vi-VN')` (`76.800.000 đ`); ô nhập là text
-  `inputmode="numeric"`, không dùng `type="number"`. Ngày theo `Asia/Ho_Chi_Minh`, `max` = hôm nay.
-- Loại hoạt động là nút lớn, không dropdown. `OTHER` bắt buộc ghi chú (BR-12).
-- Nhãn tiếng Việt của enum ở **một** file ánh xạ: `ActivityType`, `PlantingStatus`, `EndReason`,
-  `ReminderSeverity` (`OVERDUE`, `DUE_SOON`), `groupBy` (`CROP`, `PLOT`, `PLANTING`).
-- Mọi chữ là tiếng Việt có dấu. Font tự host bằng `@fontsource/*`, subset `vietnamese`.
-- Mobile-first, dùng ngoài nắng: tương phản chữ ≥ 4.5:1, vùng chạm ≥ 44px. Việc quan trọng nhất
-  là **ghi nhật ký trong 10 giây** — không có hàng KPI ở đầu trang.
-- Mọi màn có đủ trạng thái đang tải / lỗi / trống. Màn "Hôm nay" khi chưa có dữ liệu dẫn qua ba
-  bước: tạo nông trại → thêm lô → trồng cây.
-- Kiểm tra giao diện bằng **chrome-devtools** (chụp màn hình, console) và **a11y-debugging**.
-  Màn lãi/lỗ phải nạp skill **dataviz** trước khi viết biểu đồ.
-- CI có job `frontend`: file kiểu sinh ra phải khớp `openapi.json` (`git diff --exit-code`),
-  typecheck, lint, test, build đều xanh.
+- **Không bịa dữ liệu.** Chỉ hiển thị thứ backend có. Không bản đồ toạ độ, không cảm biến, không
+  vật tư, không tìm kiếm/thông báo/đăng xuất cho tới khi có API tương ứng.
+- Gọi API qua `services/api.js`: axios `baseURL: '/api/v1'`, proxy Vite → `http://localhost:8080`.
+  Không gọi thẳng `localhost:8080` (backend không bật CORS).
+- Đổi tên trường ở backend thì **không có gì báo lỗi lúc biên dịch** → sửa `docs/openapi.json`
+  xong phải rà `services/` bằng tay.
+- Dữ liệu mẫu chỉ cho truy vấn đọc khi không kết nối được backend, luôn kèm dải báo "Đang hiện dữ
+  liệu mẫu". **Thao tác ghi không bao giờ giả lập thành công.**
+- **Thao tác ghi (POST/PUT/DELETE) không tự thử lại** — backend chưa có idempotency key. Gửi lỗi
+  thì giữ nội dung form, hiện "Chưa gửi được" + nút "Gửi lại".
+- **Ghi hoạt động/thu hoạch theo lứa trồng**, không theo lô: lô trồng xen có nhiều lứa.
+- **Không tự tính niên vụ.** Lấy `startDate` / `endDate` / `label` từ API.
+- Sổ nhật ký: mỗi niên vụ tải với `size=200` rồi trộn theo ngày; còn trang sau thì hiện "tải thêm".
+- Lỗi: gắn `errors[]` vào từng ô; còn lại hiện `detail`.
+- Header `X-User-Id` đặt ở một chỗ trong `services/api.js`. Bộ chọn người dùng (user 1, 2) ở chỗ
+  avatar, đánh dấu rõ là công cụ dev.
+- Tiền `Intl.NumberFormat('vi-VN')`; ô nhập tiền là text `inputmode="numeric"`. Ngày theo
+  `Asia/Ho_Chi_Minh`, `max` = hôm nay.
+- Màu theo loại cây và nhãn tiếng Việt của enum: mỗi thứ **một** file ánh xạ. Màu không bao giờ là
+  kênh thông tin duy nhất (kèm tên cây, dấu `+`/`−`).
+- `leafdeep` không dùng làm màu chữ; `clay` không làm chữ trên `panel2` (tương phản < 4.5).
+- Chữ thường, không in hoa nhãn. Viền mảnh, không đổ bóng. Vùng chạm ≥ 44px. Focus rõ.
+- Kiểm tra giao diện bằng **chrome-devtools** và **a11y-debugging**. Biểu đồ phải nạp skill
+  **dataviz** trước khi viết.
 
 ## Lộ trình còn lại
 
 | Mốc | Nội dung |
 |---|---|
-| M6 | Phase 4: frontend. **M6a**: mockup → `GET /plantings` → dựng `frontend/` → Hôm nay + bắt đầu lần đầu → Sổ nhật ký. **M6b**: quản lý + lãi/lỗ |
+| M6 | Phase 4: frontend. **M6a**: dựng `frontend/` → Tổng quan → `GET /plantings` → form ghi hoạt động → CI. **M6b**: lô đất, thu hoạch, sổ nhật ký, báo cáo |
 | M7 | Docker Compose cho cả hệ thống (backend + frontend + PostgreSQL), cấu hình triển khai |
 | Phase 5+ | JWT, phân quyền công nhân, giá thị trường, truy xuất nguồn gốc (`design.md` §8) |
