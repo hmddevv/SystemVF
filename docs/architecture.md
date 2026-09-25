@@ -347,7 +347,7 @@ Tiền tố `/api/v1`. Tài liệu tương tác tại `/swagger-ui.html`.
 | Nông trại | `GET POST /farms` · `GET PUT DELETE /farms/{id}` |
 | Lô đất | `GET POST /farms/{farmId}/plots` · `GET PUT DELETE /plots/{id}` |
 | Cây trồng | `GET POST /crops` · `GET PUT DELETE /crops/{id}` |
-| Lứa trồng | `GET POST /plots/{plotId}/plantings?activeOnly=true` · `GET PUT DELETE /plantings/{id}` (PUT/DELETE chỉ để sửa nhập sai) |
+| Lứa trồng | `GET POST /plots/{plotId}/plantings?activeOnly=true` · `GET /plantings?farmId=&activeOnly=true` (mọi lứa của chủ sở hữu, cho form ghi nhật ký — M6) · `GET PUT DELETE /plantings/{id}` (PUT/DELETE chỉ để sửa nhập sai) |
 | Vòng đời | `POST /plantings/{id}/production-start` · `POST /plantings/{id}/termination` |
 | Niên vụ | `GET /plantings/{id}/seasons` · `GET DELETE /seasons/{id}` — không có POST/PUT: niên vụ là dữ liệu dẫn xuất (ADR-7) |
 | Hoạt động | `POST /plantings/{id}/activities` (tự gán niên vụ) · `GET /seasons/{id}/activities` (phân trang) · `GET PUT DELETE /activities/{id}` |

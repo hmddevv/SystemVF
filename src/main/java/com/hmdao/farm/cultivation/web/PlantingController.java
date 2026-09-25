@@ -53,6 +53,15 @@ class PlantingController {
         return query.listByPlot(plotId, activeOnly).stream().map(PlantingResponse::from).toList();
     }
 
+    @Operation(summary = "Mọi lứa trồng của tôi",
+            description = "Cho form ghi nhật ký chọn lứa trồng trong một lần gọi. farmId bỏ trống: mọi nông trại. "
+                    + "Nông trại của người khác trả 404 (BR-11). Xếp theo tên lô, lứa mới trồng trước.")
+    @GetMapping("/plantings")
+    List<PlantingResponse> listOwned(@RequestParam(required = false) Long farmId,
+            @RequestParam(defaultValue = "true") boolean activeOnly) {
+        return query.listOwned(farmId, activeOnly).stream().map(PlantingResponse::from).toList();
+    }
+
     @Operation(summary = "Trồng cây lên lô đất",
             description = "Gọi nhiều lần trên cùng lô để trồng xen canh. Ngày trồng không ở tương lai, số cây > 0 (BR-02).")
     @PostMapping("/plots/{plotId}/plantings")

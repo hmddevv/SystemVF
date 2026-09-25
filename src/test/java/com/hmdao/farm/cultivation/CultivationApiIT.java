@@ -130,6 +130,64 @@ class CultivationApiIT {
         assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
     }
 
+    /**
+     * Form ghi nhật ký chọn lứa trồng trong một lần gọi (plan M6 §6.1): gom mọi lô, bỏ lứa đã cưa,
+     * lọc được theo nông trại, không lộ nông trại của người khác (BR-11), và không N+1.
+     */
+    @Test
+    void listingEveryOwnedPlantingForTheLogForm() throws Exception {
+        long farmId = createFarm("Nông trại một lần gọi");
+        long plotB = createPlot(farmId, "Lô B1");
+        long plotA = createPlot(farmId, "Lô A1");
+        long coffee = plant(plotA, 1, "2016-06-15", 1100, true);
+        long pepper = plant(plotA, 3, "2019-07-01", 400, true);
+        long durian = plant(plotB, 4, "2023-05-20", 80, false);
+        long otherFarmPlanting = plant(createPlot(createFarm("Nông trại khác"), "Lô Z"), 1, "2020-01-01", 10, true);
+        mvc.perform(post("/api/v1/plantings/{id}/termination", pepper).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"endDate\": \"2026-08-20\", \"reason\": \"PEST_DISEASE\"}"))
+                .andExpect(status().isOk());
+
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
+
+        // Xếp theo tên lô (A1 trước B1), lứa đã cưa không có mặt
+        mvc.perform(get("/api/v1/plantings").param("farmId", String.valueOf(farmId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id").value(org.hamcrest.Matchers.contains((int) coffee, (int) durian)))
+                .andExpect(jsonPath("$[0].plotName").value("Lô A1"))
+                .andExpect(jsonPath("$[0].cropName").value("Cà phê (Robusta)"));
+        // 1 kiểm tra user + 1 kiểm tra quyền sở hữu nông trại + 1 lấy lứa trồng kèm lô và cây trồng
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
+
+        mvc.perform(get("/api/v1/plantings").param("farmId", String.valueOf(farmId)).param("activeOnly", "false"))
+                .andExpect(jsonPath("$.length()").value(3));
+
+        // Bỏ trống farmId: gom mọi nông trại của chủ sở hữu
+        mvc.perform(get("/api/v1/plantings"))
+                .andExpect(jsonPath("$[*].id").value(org.hamcrest.Matchers.hasItems(
+                        (int) coffee, (int) durian, (int) otherFarmPlanting)));
+
+        // BR-11: người khác không thấy gì, và nông trại của mình trả 404 với họ
+        mvc.perform(get("/api/v1/plantings").header("X-User-Id", 2))
+                .andExpect(jsonPath("$[*].id").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem((int) coffee))));
+        mvc.perform(get("/api/v1/plantings").param("farmId", String.valueOf(farmId)).header("X-User-Id", 2))
+                .andExpect(status().isNotFound());
+    }
+
+    private long createFarm(String name) throws Exception {
+        String farm = mvc.perform(post("/api/v1/farms").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"%s\"}".formatted(name)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        return JsonPath.<Number>read(farm, "$.id").longValue();
+    }
+
+    private long createPlot(long farmId, String name) throws Exception {
+        String plot = mvc.perform(post("/api/v1/farms/{id}/plots", farmId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"%s\", \"areaM2\": 10000}".formatted(name)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        return JsonPath.<Number>read(plot, "$.id").longValue();
+    }
+
     private long createPlot() throws Exception {
         String farm = mvc.perform(post("/api/v1/farms").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"Nông trại xen canh\"}"))

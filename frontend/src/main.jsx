@@ -16,11 +16,14 @@ import { ComingSoonPage, NotFoundPage } from './pages/ComingSoonPage';
 /*
  * TanStack Query: truy vấn đọc thử lại 1 lần; thao tác ghi KHÔNG BAO GIỜ tự thử lại — backend chưa
  * có idempotency key, thử lại một POST có thể sinh dòng nhật ký trùng (plan 6.2).
+ * networkMode 'always' cho thao tác ghi: mặc định (online) máy mất mạng thì mutation bị treo ở
+ * "đang gửi" rồi tự gửi khi có mạng lại mà người dùng không hay biết. Phải báo lỗi ngay để người
+ * dùng tự quyết định gửi lại.
  */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30_000 },
-    mutations: { retry: 0 },
+    mutations: { retry: 0, networkMode: 'always' },
   },
 });
 

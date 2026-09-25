@@ -62,3 +62,29 @@ export function daysBetween(fromIso, toIso) {
   const b = Date.UTC(...toIso.split('-').map((n, i) => (i === 1 ? n - 1 : +n)));
   return Math.round((b - a) / 864e5);
 }
+
+// Lùi/tiến n ngày trên chuỗi yyyy-mm-dd, không đi qua múi giờ của máy.
+export function shiftDays(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+// "Thứ Tư, 23/9" — ngày đang chọn trong form, đọc được không cần nhìn lịch.
+export function formatWeekdayDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const weekday = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(y, m - 1, d)),
+  );
+  const year = y === Number(todayIso().slice(0, 4)) ? '' : `/${y}`;
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${d}/${m}${year}`;
+}
+
+// Ô tiền: người dùng gõ "12.500.000" (dấu chấm ngăn nghìn kiểu Việt) → chỉ giữ chữ số.
+export function digitsOnly(text) {
+  return String(text ?? '').replace(/\D/g, '');
+}
+
+export function groupDigits(text) {
+  const digits = digitsOnly(text).replace(/^0+(?=\d)/, '');
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}

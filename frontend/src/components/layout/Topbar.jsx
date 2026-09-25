@@ -2,6 +2,8 @@ import { useId } from 'react';
 import { DEV_USERS } from '../../services/api';
 import { useSession } from '../../hooks/useSession';
 import { useCurrentFarm } from '../../hooks/useFarmData';
+import { useLogActivity } from '../../hooks/useLogActivity';
+import { Icon } from '../Icon';
 
 /*
  * Thanh trên: tên ứng dụng, nông trại đang xem, bộ chọn người dùng dev.
@@ -72,6 +74,22 @@ function DevUserSwitcher() {
   );
 }
 
+function LogButton() {
+  const { open } = useLogActivity();
+  const { farm } = useCurrentFarm();
+  if (!farm) return null; // chưa có nông trại thì chưa có gì để ghi — màn Bắt đầu dẫn đường
+  return (
+    <button
+      type="button"
+      onClick={() => open()}
+      className="hidden min-h-11 items-center gap-2 rounded-md bg-leaf pr-4 pl-3 font-semibold text-bg hover:brightness-110 md:flex"
+    >
+      <Icon name="plus" size={18} />
+      Ghi hoạt động
+    </button>
+  );
+}
+
 export function Topbar() {
   return (
     <header className="z-10 md:sticky md:top-0 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-line bg-bg/95 px-4 py-3 backdrop-blur md:px-6">
@@ -79,6 +97,7 @@ export function Topbar() {
       <div className="min-w-0 flex-1">
         <FarmPicker />
       </div>
+      <LogButton />
       <DevUserSwitcher />
     </header>
   );

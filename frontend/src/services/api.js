@@ -132,7 +132,9 @@ export const api = {
     byFarm: (farmId) => read(`/farms/${farmId}/plots`, null, () => mock.plotsByFarm(farmId)),
   },
   plantings: {
-    // TODO(M6a bước 3): chuyển sang GET /plantings?farmId= khi backend có (plan mục 6.1).
+    // Mọi lứa của một nông trại trong một lần gọi, xếp theo tên lô (plan mục 6.1).
+    owned: ({ farmId, activeOnly = true } = {}) =>
+      read('/plantings', { farmId, activeOnly }, () => mock.plantingsOwned({ farmId, activeOnly })),
     byPlot: (plotId, activeOnly = true) =>
       read(`/plots/${plotId}/plantings`, { activeOnly }, () => mock.plantingsByPlot(plotId)),
   },

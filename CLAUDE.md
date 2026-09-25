@@ -25,7 +25,7 @@ Hướng dẫn cho Claude Code khi làm việc trong repo này. Đọc hết tr�
 |---|---|
 | `docs/design.md` | Nghiệp vụ gốc, user story (Epic A–F), ERD, từ điển dữ liệu |
 | `docs/architecture.md` | Module, Ports & Adapters, **bảng quy tắc BR-01…BR-18, CARE-01…04 (§6)**, API (§7), ADR-1…15 (§9), lộ trình (§10) |
-| `docs/openapi.json` | Hợp đồng API — 20 đường dẫn, 37 endpoint. Frontend lấy kiểu dữ liệu từ đây |
+| `docs/openapi.json` | Hợp đồng API — 21 đường dẫn, 38 endpoint. Frontend lấy kiểu dữ liệu từ đây |
 | `docs/m6-frontend-plan.md` | Kế hoạch frontend M6: phạm vi, quyết định đã chốt, thứ tự làm |
 
 Không chép lại nội dung các file này vào code hay tài liệu khác, chỉ trỏ tới chúng.
@@ -154,7 +154,12 @@ Luật khi code frontend:
 - Dữ liệu mẫu chỉ cho truy vấn đọc khi không kết nối được backend, luôn kèm dải báo "Đang hiện dữ
   liệu mẫu". **Thao tác ghi không bao giờ giả lập thành công.**
 - **Thao tác ghi (POST/PUT/DELETE) không tự thử lại** — backend chưa có idempotency key. Gửi lỗi
-  thì giữ nội dung form, hiện "Chưa gửi được" + nút "Gửi lại".
+  thì giữ nội dung form, hiện "Chưa gửi được" + nút "Gửi lại". Mutation phải có
+  `networkMode: 'always'` (đã đặt mặc định trong `main.jsx`): chế độ mặc định của TanStack Query
+  *treo* mutation khi offline rồi **tự gửi khi có mạng lại** — đã tái hiện được lỗi này.
+- Form ghi dùng chung một bảng `<dialog>` (`hooks/useLogActivity.jsx` + `components/log/`), mở
+  bằng `useLogActivity().open({ plantingId, type })`. Lời nhắc truyền `suggestedActivity` của
+  backend — không tự suy loại việc từ mã CARE-0x.
 - **Ghi hoạt động/thu hoạch theo lứa trồng**, không theo lô: lô trồng xen có nhiều lứa.
 - **Không tự tính niên vụ.** Lấy `startDate` / `endDate` / `label` từ API.
 - Sổ nhật ký: mỗi niên vụ tải với `size=200` rồi trộn theo ngày; còn trang sau thì hiện "tải thêm".

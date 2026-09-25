@@ -17,6 +17,7 @@ import com.hmdao.farm.cultivation.application.port.out.SeasonRepository;
 import com.hmdao.farm.cultivation.domain.EndReason;
 import com.hmdao.farm.cultivation.domain.Planting;
 import com.hmdao.farm.cultivation.domain.PlantingStatus;
+import com.hmdao.farm.land.application.port.out.FarmRepository;
 import com.hmdao.farm.land.application.port.out.PlotRepository;
 import com.hmdao.farm.land.domain.Farm;
 import com.hmdao.farm.land.domain.Plot;
@@ -26,6 +27,7 @@ import com.hmdao.farm.shared.domain.ResourceNotFoundException;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -39,9 +41,10 @@ class PlantingServiceTest {
     private final PlantingRepository plantings = mock(PlantingRepository.class);
     private final SeasonRepository seasons = mock(SeasonRepository.class);
     private final PlotRepository plots = mock(PlotRepository.class);
+    private final FarmRepository farms = mock(FarmRepository.class);
     private final CropRepository crops = mock(CropRepository.class);
     private final PlantingService service =
-            new PlantingService(plantings, seasons, plots, crops, () -> OWNER, clock);
+            new PlantingService(plantings, seasons, plots, farms, crops, () -> OWNER, clock);
 
     private final Plot plot = Plot.create(Farm.create(OWNER, "Nông trại Cư M'gar", null), "Lô A2", 15_000, null);
     private final Crop coffee = Crop.create("Cà phê", "Robusta", true, 2);
@@ -114,5 +117,29 @@ class PlantingServiceTest {
                 new TerminatePlantingCommand(LocalDate.of(2026, 9, 18), EndReason.OLD_AGE, null)))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasFieldOrPropertyWithValue("ruleCode", "BR-04");
+    }
+
+    @Test
+    void listOwnedWithoutFarmCoversEveryFarmOfTheOwner() {
+        Planting planting = Planting.plant(plot, coffee, LocalDate.of(2016, 6, 15), 1100, true, LocalDate.of(2026, 9, 17));
+        when(plantings.findAllOwned(OWNER, null, true)).thenReturn(List.of(planting));
+
+        var views = service.listOwned(null, true);
+
+        assertThat(views).singleElement().satisfies(view -> {
+            assertThat(view.plotName()).isEqualTo("Lô A2");
+            assertThat(view.cropName()).isEqualTo("Cà phê (Robusta)");
+        });
+        verify(farms, never()).findByIdAndOwnerId(any(), any());
+    }
+
+    @Test
+    void br11_listOwnedRejectsFarmOfAnotherOwnerAsNotFound() {
+        when(farms.findByIdAndOwnerId(7L, OWNER)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.listOwned(7L, true))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("nông trại");
+        verify(plantings, never()).findAllOwned(any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 }

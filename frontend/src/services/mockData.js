@@ -349,6 +349,23 @@ export const plotsByFarm = (farmId) => clone(PLOTS.filter((p) => p.farmId === Nu
 export const plantingsByPlot = (plotId) =>
   clone(PLANTINGS.filter((p) => p.plotId === Number(plotId)));
 
+// Giống GET /plantings: lọc theo nông trại, bỏ lứa đã kết thúc, xếp theo tên lô rồi lứa mới trồng trước.
+export const plantingsOwned = ({ farmId, activeOnly = true } = {}) => {
+  const plotIds = new Set(
+    PLOTS.filter((p) => farmId == null || p.farmId === Number(farmId)).map((p) => p.id),
+  );
+  return clone(
+    PLANTINGS.filter((p) => plotIds.has(p.plotId))
+      .filter((p) => !activeOnly || p.status !== 'TERMINATED')
+      .sort(
+        (a, b) =>
+          a.plotName.localeCompare(b.plotName, 'vi') ||
+          b.plantingDate.localeCompare(a.plantingDate) ||
+          b.id - a.id,
+      ),
+  );
+};
+
 export const seasonsByPlanting = (plantingId) =>
   clone(SEASONS.filter((s) => s.plantingId === Number(plantingId)).map(stripPrivate));
 

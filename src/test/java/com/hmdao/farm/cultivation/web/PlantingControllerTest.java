@@ -86,4 +86,23 @@ class PlantingControllerTest {
 
         verify(query).listByPlot(1L, true);
     }
+
+    @Test
+    void listOwnedDefaultsToEveryFarmAndActivePlantingsOnly() throws Exception {
+        when(query.listOwned(null, true)).thenReturn(List.of());
+
+        mvc.perform(get("/api/v1/plantings")).andExpect(status().isOk());
+
+        verify(query).listOwned(null, true);
+    }
+
+    @Test
+    void listOwnedPassesFarmAndHistoryFlagThrough() throws Exception {
+        when(query.listOwned(3L, false)).thenReturn(List.of());
+
+        mvc.perform(get("/api/v1/plantings").param("farmId", "3").param("activeOnly", "false"))
+                .andExpect(status().isOk());
+
+        verify(query).listOwned(3L, false);
+    }
 }

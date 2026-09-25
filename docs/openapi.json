@@ -2324,6 +2324,105 @@
         "tags" : [ "7. Thu hoạch" ]
       }
     },
+    "/api/v1/plantings" : {
+      "get" : {
+        "description" : "Cho form ghi nhật ký chọn lứa trồng trong một lần gọi. farmId bỏ trống: mọi nông trại. Nông trại của người khác trả 404 (BR-11). Xếp theo tên lô, lứa mới trồng trước.",
+        "operationId" : "listOwned",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "farmId",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "activeOnly",
+          "required" : false,
+          "schema" : {
+            "default" : true,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Id chủ nông trại (bỏ trống = người dùng mặc định 1). Thay bằng JWT ở Phase 5.",
+          "in" : "header",
+          "name" : "X-User-Id",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PlantingResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Dữ liệu không hợp lệ — lỗi từng trường nằm trong 'errors', lỗi tham số nằm trong 'detail'"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Unprocessable Content"
+          }
+        },
+        "summary" : "Mọi lứa trồng của tôi",
+        "tags" : [ "4. Lứa trồng" ]
+      }
+    },
     "/api/v1/plantings/{plantingId}" : {
       "delete" : {
         "description" : "Muốn bỏ một lứa trồng thật (cưa bỏ, chặt bỏ) thì dùng /termination để giữ lịch sử.",

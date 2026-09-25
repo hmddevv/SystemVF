@@ -1,7 +1,8 @@
 import { NavLink, Outlet } from 'react-router';
 import { Icon } from '../Icon';
 import { Topbar } from './Topbar';
-import { useMockActive } from '../../hooks/useFarmData';
+import { useCurrentFarm, useMockActive } from '../../hooks/useFarmData';
+import { LogActivityProvider, useLogActivity } from '../../hooks/useLogActivity';
 
 const NAV = [
   { to: '/', label: 'Tổng quan', icon: 'overview', end: true },
@@ -18,7 +19,7 @@ function NavItem({ to, label, icon, end }) {
       to={to}
       end={end}
       className={({ isActive }) =>
-        `relative flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 text-xs font-medium md:flex-none md:py-3 ${
+        `relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md px-0.5 text-xs font-medium whitespace-nowrap md:flex-none md:py-3 ${
           isActive ? 'text-ink' : 'text-muted hover:text-ink'
         }`
       }
@@ -53,14 +54,48 @@ function MockBanner() {
   );
 }
 
+/*
+ * Điện thoại: nút ghi nằm giữa thanh điều hướng dưới — trong tầm ngón cái mà không che nội dung
+ * như nút nổi. Từ md trở lên nút này ở thanh trên.
+ */
+function MobileLogButton() {
+  const { open } = useLogActivity();
+  const { farm } = useCurrentFarm();
+  if (!farm) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => open()}
+      className="flex min-h-14 w-16 flex-none flex-col items-center justify-center gap-1 text-xs font-medium text-ink md:hidden"
+    >
+      <span className="-mt-5 grid h-12 w-12 place-items-center rounded-full border-4 border-bg bg-leaf text-bg">
+        <Icon name="plus" size={22} />
+      </span>
+      <span>Ghi</span>
+    </button>
+  );
+}
+
 export function AppShell() {
+  return (
+    <LogActivityProvider>
+      <Shell />
+    </LogActivityProvider>
+  );
+}
+
+function Shell() {
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[88px_minmax(0,1fr)]">
       <nav
         aria-label="Điều hướng chính"
         className="fixed inset-x-0 bottom-0 z-20 flex border-t border-line bg-bg px-1 pb-[env(safe-area-inset-bottom)] md:sticky md:top-0 md:h-dvh md:flex-col md:gap-1 md:border-t-0 md:border-r md:px-2 md:pt-20"
       >
-        {NAV.map((item) => (
+        {NAV.slice(0, 2).map((item) => (
+          <NavItem key={item.to} {...item} />
+        ))}
+        <MobileLogButton />
+        {NAV.slice(2).map((item) => (
           <NavItem key={item.to} {...item} />
         ))}
       </nav>

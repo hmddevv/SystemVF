@@ -22,7 +22,11 @@ function Bar({ row, domain, active, onActive }) {
       tabIndex={0}
       onMouseEnter={onActive}
       onFocus={onActive}
-      aria-label={`${row.label}: ${row.netProfit >= 0 ? 'lãi' : 'lỗ'} ${formatMoney(Math.abs(row.netProfit))}`}
+      aria-label={
+        row.netProfit === 0
+          ? `${row.label}: chưa lãi chưa lỗ`
+          : `${row.label}: ${row.netProfit > 0 ? 'lãi' : 'lỗ'} ${formatMoney(Math.abs(row.netProfit))}`
+      }
       className={`grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_auto] ${
         active ? 'bg-panel2' : ''
       }`}
@@ -58,31 +62,37 @@ function Bar({ row, domain, active, onActive }) {
 function Detail({ row, year }) {
   if (!row) return null;
   return (
-    <dl className="num grid grid-cols-2 gap-x-4 gap-y-1 border-t border-line px-4 py-3 text-sm sm:grid-cols-4">
-      <div>
-        <dt className="text-muted">Doanh thu</dt>
-        <dd className="text-harvest">{formatMoney(row.totalRevenue)}</dd>
-      </div>
-      <div>
-        <dt className="text-muted">Chi phí</dt>
-        <dd className="text-ink">{formatMoney(row.totalCost)}</dd>
-      </div>
-      <div>
-        <dt className="text-muted">Lãi trên 1.000 m²</dt>
-        <dd className="text-ink">
-          {row.profitPer1000m2 == null
-            ? 'không đủ dữ liệu'
-            : formatSignedMoney(row.profitPer1000m2)}
-          {row.sharedPlot && <span className="text-muted">*</span>}
-        </dd>
-      </div>
-      <div>
-        <dt className="text-muted">{year == null ? 'Số niên vụ' : 'Luỹ kế mọi niên vụ'}</dt>
-        <dd className="text-ink">
-          {year == null ? row.seasonCount : formatSignedMoney(row.lifetimeNetProfit)}
-        </dd>
-      </div>
-    </dl>
+    <div className="border-t border-line px-4 py-3">
+      <p className="mb-2 flex items-center gap-1.5 text-sm text-ink">
+        <CropDot cropName={row.label} size={8} />
+        Chi tiết {row.label}
+      </p>
+      <dl className="num grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
+        <div>
+          <dt className="text-muted">Doanh thu</dt>
+          <dd className="text-harvest">{formatMoney(row.totalRevenue)}</dd>
+        </div>
+        <div>
+          <dt className="text-muted">Chi phí</dt>
+          <dd className="text-ink">{formatMoney(row.totalCost)}</dd>
+        </div>
+        <div>
+          <dt className="text-muted">Lãi trên 1.000 m²</dt>
+          <dd className="text-ink">
+            {row.profitPer1000m2 == null
+              ? 'không đủ dữ liệu'
+              : formatSignedMoney(row.profitPer1000m2)}
+            {row.sharedPlot && <span className="text-muted">*</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted">{year == null ? 'Số niên vụ' : 'Luỹ kế mọi niên vụ'}</dt>
+          <dd className="text-ink">
+            {year == null ? row.seasonCount : formatSignedMoney(row.lifetimeNetProfit)}
+          </dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -92,7 +102,12 @@ export function ProfitByCrop({ query, year, years, onYearChange }) {
   const rows = query.data?.rows ?? [];
   const values = rows.map((r) => r.netProfit);
   const domain = [Math.min(0, ...values), Math.max(0, ...values)];
-  const active = rows.find((r) => r.id === activeId) ?? rows[0] ?? null;
+  // Chưa rê chuột: chi tiết của cây biến động nhiều nhất, không phải dòng đầu (thường là 0 đ)
+  const biggest = rows.reduce(
+    (best, r) => (best == null || Math.abs(r.netProfit) > Math.abs(best.netProfit) ? r : best),
+    null,
+  );
+  const active = rows.find((r) => r.id === activeId) ?? biggest;
   const anyShared = rows.some((r) => r.sharedPlot);
 
   return (

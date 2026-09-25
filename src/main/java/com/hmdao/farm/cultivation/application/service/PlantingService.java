@@ -15,6 +15,7 @@ import com.hmdao.farm.cultivation.application.port.out.SeasonRepository;
 import com.hmdao.farm.cultivation.domain.Planting;
 import com.hmdao.farm.cultivation.domain.PlantingStatus;
 import com.hmdao.farm.identity.application.port.CurrentUserProvider;
+import com.hmdao.farm.land.application.port.out.FarmRepository;
 import com.hmdao.farm.land.application.port.out.PlotRepository;
 import com.hmdao.farm.land.domain.Plot;
 import com.hmdao.farm.shared.domain.ResourceConflictException;
@@ -33,15 +34,17 @@ class PlantingService implements PlantCropUseCase, PlantingLifecycleUseCase, Cor
     private final PlantingRepository plantings;
     private final SeasonRepository seasons;
     private final PlotRepository plots;
+    private final FarmRepository farms;
     private final CropRepository crops;
     private final CurrentUserProvider currentUser;
     private final Clock clock;
 
     PlantingService(PlantingRepository plantings, SeasonRepository seasons, PlotRepository plots,
-            CropRepository crops, CurrentUserProvider currentUser, Clock clock) {
+            FarmRepository farms, CropRepository crops, CurrentUserProvider currentUser, Clock clock) {
         this.plantings = plantings;
         this.seasons = seasons;
         this.plots = plots;
+        this.farms = farms;
         this.crops = crops;
         this.currentUser = currentUser;
         this.clock = clock;
@@ -105,6 +108,19 @@ class PlantingService implements PlantCropUseCase, PlantingLifecycleUseCase, Cor
                 : plantings.findAllByPlotIdOrderByPlantingDateDescIdDesc(plotId);
         LocalDate today = today();
         return found.stream().map(planting -> PlantingView.of(planting, today)).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PlantingView> listOwned(Long farmId, boolean activeOnly) {
+        Long owner = currentUser.currentUserId();
+        if (farmId != null && farms.findByIdAndOwnerId(farmId, owner).isEmpty()) {
+            throw new ResourceNotFoundException("nông trại", farmId);
+        }
+        LocalDate today = today();
+        return plantings.findAllOwned(owner, farmId, activeOnly).stream()
+                .map(planting -> PlantingView.of(planting, today))
+                .toList();
     }
 
     private PlantingView view(Planting planting) {

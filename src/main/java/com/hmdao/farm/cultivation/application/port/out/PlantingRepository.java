@@ -17,6 +17,12 @@ public interface PlantingRepository {
 
     List<Planting> findAllByPlotIdAndStatusNotOrderByPlantingDateDescIdDesc(Long plotId, PlantingStatus excluded);
 
+    /**
+     * Lứa trồng thuộc chủ sở hữu, lọc tuỳ chọn theo nông trại; nạp sẵn lô và cây trồng trong cùng
+     * một truy vấn. Xếp theo tên lô, rồi lứa mới trồng trước.
+     */
+    List<Planting> findAllOwned(Long ownerId, Long farmId, boolean activeOnly);
+
     long countByPlotId(Long plotId);
 
     long countByPlotIdAndStatusNot(Long plotId, PlantingStatus excluded);

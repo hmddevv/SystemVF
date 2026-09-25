@@ -268,9 +268,15 @@ trên dải (tháng 5–9) là hằng số hiển thị, khớp CARE-02.
    giao diện (thanh icon, thanh trên, bộ chọn người dùng dev).
 2. Màn **Tổng quan**: sơ đồ lô theo diện tích, cảnh báo + sắp đến hạn, giám sát mùa vụ, lãi/lỗ
    theo cây. Trạng thái trống dẫn qua ba bước bắt đầu (6.3).
-3. Backend: `GET /plantings` (6.1); chuyển Tổng quan và form ghi sang dùng nó.
+3. Backend: `GET /plantings` (6.1); chuyển Tổng quan và form ghi sang dùng nó. **Xong** — một câu
+   JPQL `join fetch`, IT đếm ≤ 3 câu SQL; Tổng quan còn 2 lần gọi cố định thay cho N+1.
 4. **Form ghi hoạt động** dạng slide-over — chọn **lứa trồng** (không phải lô, vì một lô trồng
-   xen có nhiều lứa), loại việc, ngày, chi phí, ghi chú (6.2, 6.6).
+   xen có nhiều lứa), loại việc, ngày, chi phí, ghi chú (6.2, 6.6). **Xong** — `<dialog>` gốc
+   (phải trên desktop, dưới lên trên điện thoại), mở từ thanh trên, nút "Ghi" giữa thanh điều
+   hướng dưới và nút "Ghi" của từng lời nhắc (điền sẵn `suggestedActivity`). Đã chạy với backend
+   thật: ghi thành công báo niên vụ do backend xếp, lời nhắc tự biến mất (BR-18), lỗi 422 hiện
+   `detail`, offline báo "Chưa gửi được" và giữ nháp. Lighthouse Accessibility 100 (có và không
+   mở form).
 5. Job CI frontend, ADR-16, README frontend.
 
 **Xong M6a khi:** chạy được với backend thật, trên điện thoại thật qua wifi (`vite --host`) và có

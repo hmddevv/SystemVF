@@ -6,7 +6,9 @@ import com.hmdao.farm.cultivation.domain.PlantingStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
 
 /**
  * {@code plot} và {@code crop} là LAZY; view luôn cần tên lô và tên cây. {@code @EntityGraph}
@@ -25,4 +27,19 @@ interface SpringDataPlantingRepository extends Repository<Planting, Long>, Plant
     @Override
     @EntityGraph(attributePaths = {"plot", "crop"})
     List<Planting> findAllByPlotIdAndStatusNotOrderByPlantingDateDescIdDesc(Long plotId, PlantingStatus excluded);
+
+    @Override
+    @Query("""
+            select p from Planting p
+                join fetch p.plot pl
+                join fetch p.crop
+                join pl.farm f
+            where f.ownerId = :ownerId
+                and (:farmId is null or f.id = :farmId)
+                and (:activeOnly = false
+                    or p.status <> com.hmdao.farm.cultivation.domain.PlantingStatus.TERMINATED)
+            order by pl.name asc, p.plantingDate desc, p.id desc
+            """)
+    List<Planting> findAllOwned(@Param("ownerId") Long ownerId, @Param("farmId") Long farmId,
+            @Param("activeOnly") boolean activeOnly);
 }

@@ -27,9 +27,19 @@ export function useCurrentFarm() {
   return { ...farms, farms: list, farm };
 }
 
+// Lứa đang canh tác của một nông trại — một lần gọi GET /plantings (plan 6.1).
+export function useActivePlantings(farmId) {
+  const { userId } = useSession();
+  return useQuery({
+    queryKey: ['plantings', userId, farmId, 'active'],
+    queryFn: () => api.plantings.owned({ farmId, activeOnly: true }),
+    enabled: farmId != null,
+  });
+}
+
 /*
- * Lô đất kèm các lứa đang canh tác của từng lô.
- * Hiện phải gọi mỗi lô một lần (N+1 qua mạng) — sẽ thay bằng GET /plantings?farmId= (plan 6.1).
+ * Lô đất kèm các lứa đang canh tác của từng lô: hai lần gọi cố định, ghép theo plotId ở máy.
+ * Vẫn cần danh sách lô riêng — lô chưa trồng gì cũng phải hiện trên sơ đồ.
  */
 export function usePlotsWithPlantings(farmId) {
   const { userId } = useSession();
@@ -38,25 +48,21 @@ export function usePlotsWithPlantings(farmId) {
     queryFn: () => api.plots.byFarm(farmId),
     enabled: farmId != null,
   });
-  const plantingQueries = useQueries({
-    queries: (plots.data ?? []).map((plot) => ({
-      queryKey: ['plantings', userId, plot.id, 'active'],
-      queryFn: () => api.plantings.byPlot(plot.id, true),
-    })),
-  });
-  const loadingPlantings = plantingQueries.some((q) => q.isPending);
-  const error = plots.error ?? plantingQueries.find((q) => q.error)?.error ?? null;
-  const data = (plots.data ?? []).map((plot, i) => ({
+  const plantings = useActivePlantings(farmId);
+  // Không dùng Map.groupBy: điện thoại cũ ngoài vườn (Safari < 17.4) chưa có.
+  const byPlot = new Map();
+  (plantings.data ?? []).forEach((p) => byPlot.set(p.plotId, [...(byPlot.get(p.plotId) ?? []), p]));
+  const data = (plots.data ?? []).map((plot) => ({
     ...plot,
-    plantings: plantingQueries[i]?.data ?? [],
+    plantings: byPlot.get(plot.id) ?? [],
   }));
   return {
     data,
-    isPending: plots.isPending || loadingPlantings,
-    error,
+    isPending: plots.isPending || plantings.isPending,
+    error: plots.error ?? plantings.error ?? null,
     refetch: () => {
       plots.refetch();
-      plantingQueries.forEach((q) => q.refetch());
+      plantings.refetch();
     },
   };
 }
