@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import '@fontsource-variable/bitter';
 import '@fontsource/ibm-plex-sans/400.css';
 import '@fontsource/ibm-plex-sans/500.css';
@@ -10,22 +10,11 @@ import '@fontsource/ibm-plex-sans/600.css';
 import './index.css';
 import { AppShell } from './components/layout/AppShell';
 import { SessionProvider } from './hooks/useSession';
+import { createQueryClient } from './services/queryClient';
 import { DashboardPage } from './pages/DashboardPage';
 import { ComingSoonPage, NotFoundPage } from './pages/ComingSoonPage';
 
-/*
- * TanStack Query: truy vấn đọc thử lại 1 lần; thao tác ghi KHÔNG BAO GIỜ tự thử lại — backend chưa
- * có idempotency key, thử lại một POST có thể sinh dòng nhật ký trùng (plan 6.2).
- * networkMode 'always' cho thao tác ghi: mặc định (online) máy mất mạng thì mutation bị treo ở
- * "đang gửi" rồi tự gửi khi có mạng lại mà người dùng không hay biết. Phải báo lỗi ngay để người
- * dùng tự quyết định gửi lại.
- */
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30_000 },
-    mutations: { retry: 0, networkMode: 'always' },
-  },
-});
+const queryClient = createQueryClient();
 
 const router = createBrowserRouter([
   {

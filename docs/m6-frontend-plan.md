@@ -277,7 +277,10 @@ trên dải (tháng 5–9) là hằng số hiển thị, khớp CARE-02.
    thật: ghi thành công báo niên vụ do backend xếp, lời nhắc tự biến mất (BR-18), lỗi 422 hiện
    `detail`, offline báo "Chưa gửi được" và giữ nháp. Lighthouse Accessibility 100 (có và không
    mở form).
-5. Job CI frontend, ADR-16, README frontend.
+5. Job CI frontend, ADR-16, README frontend. **Xong** — job `frontend` trong `build.yml` (lint,
+   Prettier, Vitest, build); 18 test gồm lớp gọi API và form ghi, trong đó có test hồi quy
+   chống tự gửi lại khi mất mạng (đã kiểm: bỏ `networkMode: 'always'` thì test đỏ). Cấu hình
+   TanStack Query tách ra `services/queryClient.js` để test chạy đúng cấu hình thật.
 
 **Xong M6a khi:** chạy được với backend thật, trên điện thoại thật qua wifi (`vite --host`) và có
 ảnh chụp; điểm Accessibility của Lighthouse ≥ 95; CI xanh → **dừng duyệt**.

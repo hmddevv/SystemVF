@@ -24,7 +24,7 @@ Hướng dẫn cho Claude Code khi làm việc trong repo này. Đọc hết tr�
 | File | Dùng khi |
 |---|---|
 | `docs/design.md` | Nghiệp vụ gốc, user story (Epic A–F), ERD, từ điển dữ liệu |
-| `docs/architecture.md` | Module, Ports & Adapters, **bảng quy tắc BR-01…BR-18, CARE-01…04 (§6)**, API (§7), ADR-1…15 (§9), lộ trình (§10) |
+| `docs/architecture.md` | Module, Ports & Adapters, **bảng quy tắc BR-01…BR-18, CARE-01…04 (§6)**, API (§7), ADR-1…16 (§9), lộ trình (§10) |
 | `docs/openapi.json` | Hợp đồng API — 21 đường dẫn, 38 endpoint. Frontend lấy kiểu dữ liệu từ đây |
 | `docs/m6-frontend-plan.md` | Kế hoạch frontend M6: phạm vi, quyết định đã chốt, thứ tự làm |
 

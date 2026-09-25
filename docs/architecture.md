@@ -505,6 +505,31 @@ docs/openapi.json` bắt trường hợp hợp đồng API đổi mà chưa đư
     file mới hiện thành diff. Khóa JSON được sắp xếp trước khi ghi vì springdoc trả mã lỗi
     theo thứ tự HashMap — không chuẩn hóa thì test đỏ ngẫu nhiên. Đổi tên một trường hay bỏ
     một mã lỗi là thay đổi phá vỡ phía gọi; từ M6 frontend sinh client từ chính file này.
+16. **Frontend M6: SPA mỏng, backend là nguồn sự thật duy nhất; thao tác ghi không bao giờ tự
+    gửi lại.** Chi tiết phương án ở `docs/m6-frontend-plan.md`; ở đây chỉ chốt những điều mà
+    đổi đi thì phải cân nhắc lại.
+    - *Ngăn xếp:* React + Vite, JavaScript (JSX), Tailwind v4, TanStack Query, axios. Phương án 2
+      bỏ việc sinh kiểu từ `openapi.json` (sửa ADR-15): đổi tên trường ở backend không báo lỗi lúc
+      biên dịch, nên **mọi tên trường API chỉ nằm trong `frontend/src/services/`** để có đúng một
+      chỗ phải rà.
+    - *Cùng origin:* gọi `/api/v1` qua proxy (Vite khi dev, nginx ở M7). Backend không bật CORS.
+    - *Không bịa dữ liệu:* chỉ hiện thứ backend có. Sơ đồ lô vẽ theo diện tích vì `Plot` không có
+      toạ độ. Niên vụ luôn lấy từ API (ADR-7), frontend không tự tính.
+    - *Dữ liệu mẫu chỉ cho truy vấn đọc*, chỉ khi không kết nối được máy chủ, và luôn có dải báo.
+      Thao tác ghi không bao giờ giả lập thành công.
+    - *Ghi theo lứa trồng, không theo lô:* lô xen canh có nhiều lứa. `GET /plantings?farmId=` cho
+      form chọn lứa trồng trong một lần gọi thay vì N+1 qua mạng yếu.
+    - *Không tự gửi lại thao tác ghi.* Backend chưa có idempotency key: một POST đã tới máy chủ
+      rồi mất phản hồi, gửi lại sẽ thành dòng nhật ký trùng. Vì vậy mutation `retry: 0` **và**
+      `networkMode: 'always'` — chế độ mặc định của TanStack Query treo mutation khi offline rồi
+      tự gửi khi có mạng lại; lỗi này đã tái hiện được với backend thật trong M6a và có test hồi
+      quy chạy trên cấu hình thật (`services/queryClient.js`). Gửi lỗi thì giữ nội dung, lưu nháp
+      ở máy, người dùng tự bấm "Gửi lại" sau khi xem lại nhật ký.
+    - *Test:* Vitest + Testing Library, API giả lập bằng MSW ở tầng mạng để `services/api.js`
+      chạy thật; job CI riêng (lint, Prettier, test, build).
+    *Đánh đổi:* không đồng bộ offline — ghi ngoài vườn mất sóng thì phải gửi lại bằng tay; nháp
+    chỉ nằm trên một máy. *Xem lại khi:* backend có idempotency key (khi đó có thể xếp hàng gửi
+    tự động an toàn), hoặc người dùng thật báo mất dữ liệu do sóng yếu.
 
 ---
 

@@ -32,12 +32,24 @@ trại (BR-11).
 Dữ liệu tham chiếu (danh mục cây trồng kèm tháng bắt đầu niên vụ) do Flyway nạp sẵn. Hai tài
 khoản demo chỉ có ở profile `dev` — `db/demo` không bao giờ chạy ở production.
 
+### Giao diện web
+
+Cần Node 24 LTS. Chạy song song với backend ở trên:
+
+```bash
+cd frontend && npm ci && npm run dev   # http://localhost:5173
+```
+
+Chi tiết ở [`frontend/README.md`](frontend/README.md).
+
 ## Kiểm thử
 
 ```bash
-./mvnw test      # 205 test đơn vị, không cần Docker, ~30 giây
+./mvnw test      # 209 test đơn vị, không cần Docker, ~30 giây
 ./mvnw verify    # thêm integration test trên PostgreSQL thật + coverage
 ```
+
+Frontend: `cd frontend && npm test` (Vitest + Testing Library, API giả lập bằng MSW).
 
 Thiếu Docker thì integration test được **bỏ qua kèm lý do**, không báo đỏ oan. CI
 (`.github/workflows/build.yml`) luôn có Docker nên ở đó chúng luôn chạy.
