@@ -87,23 +87,29 @@ Token khai báo bằng `@theme` trong `frontend/src/index.css`. Tương phản �
 | `ink` | `#E9EEE3` | Chữ chính | 15.5 / 13.7 / 12.5 |
 | `muted` | `#93A288` | Chữ phụ | 6.7 / 6.0 / 5.5 |
 | `leaf` | `#6FBE4F` | Nhấn chính, hành động chính; chữ trên nút là `bg` (7.9) | 7.9 / 7.1 / 6.4 |
-| `leafdeep` | `#3C7A31` | Màu tô (cà phê) | **3.5 — không dùng làm chữ** |
 | `harvest` | `#E3A930` | Mùa vụ, thu hoạch, doanh thu | 8.7 / 7.7 / 7.0 |
 | `clay` | `#D9663D` | Cảnh báo, quá hạn, lỗ | 5.1 / 4.6 / **4.2 — không làm chữ trên `panel2`** |
 | `sky` | `#5BA7C6` | Nước (tưới) | 6.8 / 6.0 / 5.5 |
-| `pepper` | `#B98A5A` | Hồ tiêu | 6.0 / 5.3 / 4.8 |
 
 **Màu theo loại cây** — nhất quán ở mọi nơi (chấm tròn, sơ đồ lô, biểu đồ), ánh xạ theo
 `Crop.name` ở một file duy nhất:
 
-| Cây | Token |
-|---|---|
-| Cà phê | `leafdeep` |
-| Hồ tiêu | `pepper` |
-| Sầu riêng | `harvest` |
-| Cao su | `leaf` |
-| Điều | `clay` |
-| Cây khác (vd. Ngô) | `sky` |
+| Cây | Token | Màu | Gợi từ |
+|---|---|---|---|
+| Cà phê | `crop-coffee` | `#008151` | tán lá cà phê |
+| Hồ tiêu | `crop-pepper` | `#CD4C96` | chùm tiêu chín đỏ tía |
+| Sầu riêng | `crop-durian` | `#BD8A12` | cơm sầu riêng vàng hổ phách |
+| Cao su | `crop-rubber` | `#3782E5` | lam, tách hẳn khỏi nhóm màu ấm |
+| Điều | `crop-cashew` | `#C6420F` | trái điều chín cam cháy |
+| Cây khác (vd. Ngô) | `crop-other` | `#93A288` | xám lục, cố ý không mang sắc độ |
+
+Bảng màu cây **tách riêng** khỏi màu trạng thái (`leaf`, `harvest`, `clay`) và thay bộ màu đầu
+tiên (dùng lại `leafdeep`/`pepper`/`harvest`/`leaf`/`clay`) — bộ đó trượt kiểm tra mù màu: cao su
+và sầu riêng gần như trùng với người mù màu đỏ-lục (ΔE 2.6). Bộ mới được tìm trong không gian
+OKLCH, mỗi cây giữ vùng sắc độ có nghĩa, rồi chạy `validate_palette` của skill dataviz trên nền
+`panel`, so **mọi cặp** vì sơ đồ lô là dạng bản đồ: mù màu ΔE 9.4 (mục tiêu ≥ 8), mắt thường
+15.8 (sàn 15), tương phản ≥ 3:1. Vàng chỉ đạt tới hổ phách vì dải sáng trên nền tối dừng ở
+L 0.67 — vàng tươi hơn sẽ chói và lệch dải. Màu cây chỉ dùng để tô, không làm chữ.
 
 Màu không bao giờ là kênh thông tin duy nhất: chấm màu luôn đi kèm tên cây, lãi/lỗ luôn có dấu
 `+` / `−`.

@@ -55,13 +55,11 @@ src/
   (`retry: 0`, `networkMode: 'always'`) có test hồi quy — đừng đổi.
 - **Ghi theo lứa trồng, không theo lô.** Lô trồng xen có nhiều lứa.
 - **Không tự tính niên vụ.** Lấy `label`, `startDate`, `endDate` từ API.
-- Màu cây không bao giờ đứng một mình — luôn kèm tên cây. `leafdeep` không làm màu chữ; `clay`
-  không làm chữ trên nền `panel2`.
+- Màu cây không bao giờ đứng một mình — luôn kèm tên cây. Màu cây (`crop-*`) chỉ để tô, không
+  làm chữ; đổi màu thì chạy lại bộ kiểm tra mù màu cho cả bộ. `clay` không làm chữ trên `panel2`.
 - "Hôm nay" theo giờ Việt Nam (`todayIso()`), không dùng `new Date().toISOString()`.
 
 ## Giới hạn đã biết
 
 - Chưa đồng bộ offline: mất sóng thì người dùng tự bấm "Gửi lại"; nháp chỉ lưu trên một máy.
-- Bảng màu theo loại cây chưa đạt kiểm tra mù màu (cặp cao su / sầu riêng); tên cây luôn đi
-  kèm chấm màu để bù.
 - Lô đất, cây trồng, nhật ký, báo cáo chi tiết làm ở M6b — hiện là trang "sắp có".

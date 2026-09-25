@@ -9,7 +9,15 @@
  *
  * Tương phản chữ (WCAG) trên bg / panel / panel2:
  *   ink 15.5/13.7/12.5 · muted 6.7/6.0/5.5 · leaf 7.9/7.1/6.4 · harvest 8.7/7.7/7.0
- *   clay 5.1/4.6/4.2 → KHÔNG làm chữ trên panel2 · leafdeep 3.5 → chỉ làm màu tô, không làm chữ
+ *   clay 5.1/4.6/4.2 → KHÔNG làm chữ trên panel2
+ *
+ * Màu theo loại cây (crop-*) tách riêng khỏi màu trạng thái (leaf = hành động, harvest = doanh
+ * thu, clay = quá hạn/lỗ): một chấm màu cây không được đọc nhầm thành "cảnh báo" hay "tiền vào".
+ * Chọn bằng tìm kiếm trong OKLCH và đã chạy validate_palette của skill dataviz trên nền panel,
+ * so MỌI cặp (sơ đồ lô là dạng bản đồ, cây nào cũng có thể nằm cạnh cây nào):
+ *   dải sáng 0.48–0.67 · độ bão hoà ≥ 0.10 · mù màu đỏ-lục ΔE 9.4 (mục tiêu ≥ 8)
+ *   · mắt thường ΔE 15.8 (sàn 15) · tương phản với nền ≥ 3:1. Chỉ dùng làm màu tô, không làm chữ.
+ * Đổi một màu thì chạy lại bộ kiểm tra cho cả bộ — không chỉnh bằng mắt.
  */
 @theme static {
   --color-*: initial;
@@ -20,11 +28,16 @@
   --color-ink: #e9eee3;
   --color-muted: #93a288;
   --color-leaf: #6fbe4f;
-  --color-leafdeep: #3c7a31;
   --color-harvest: #e3a930;
   --color-clay: #d9663d;
   --color-sky: #5ba7c6;
-  --color-pepper: #b98a5a;
+
+  --color-crop-coffee: #008151; /* xanh lục bảo — tán lá cà phê */
+  --color-crop-pepper: #cd4c96; /* đỏ tía — chùm tiêu chín */
+  --color-crop-durian: #bd8a12; /* vàng hổ phách — cơm sầu riêng */
+  --color-crop-rubber: #3782e5; /* lam — tách hẳn khỏi nhóm màu ấm */
+  --color-crop-cashew: #c6420f; /* cam cháy — trái điều chín */
+  --color-crop-other: #93a288; /* xám lục — "cây khác", cố ý không mang sắc độ */
   --color-transparent: transparent;
   --color-current: currentColor;
 

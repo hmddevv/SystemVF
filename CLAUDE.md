@@ -170,7 +170,9 @@ Luật khi code frontend:
   `Asia/Ho_Chi_Minh`, `max` = hôm nay.
 - Màu theo loại cây và nhãn tiếng Việt của enum: mỗi thứ **một** file ánh xạ. Màu không bao giờ là
   kênh thông tin duy nhất (kèm tên cây, dấu `+`/`−`).
-- `leafdeep` không dùng làm màu chữ; `clay` không làm chữ trên `panel2` (tương phản < 4.5).
+- Màu cây là token `crop-*` riêng, chỉ để tô, không làm chữ. Đổi màu nào thì chạy lại
+  `validate_palette` (skill dataviz) cho cả bộ, so mọi cặp. `clay` không làm chữ trên `panel2`
+  (tương phản < 4.5).
 - Chữ thường, không in hoa nhãn. Viền mảnh, không đổ bóng. Vùng chạm ≥ 44px. Focus rõ.
 - Kiểm tra giao diện bằng **chrome-devtools** và **a11y-debugging**. Biểu đồ phải nạp skill
   **dataviz** trước khi viết.

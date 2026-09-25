@@ -1,21 +1,22 @@
 /*
  * Màu theo loại cây — file ánh xạ DUY NHẤT (plan mục 3). Mỗi loại cây một màu ở mọi nơi.
  * So khớp theo tên cây (Crop.name), bỏ qua phần giống trong ngoặc: "Cà phê (Robusta)" → cà phê.
+ * Giá trị màu và kết quả kiểm tra mù màu nằm ở token crop-* trong index.css.
  *
- * Lưu ý khả năng tiếp cận: bộ màu này KHÔNG đạt kiểm tra mù màu (leaf ↔ harvest gần như trùng với
- * người mù màu đỏ-lục; harvest ↔ pepper gần nhau cả với mắt thường). Vì vậy màu cây luôn đi kèm
- * tên cây — không bao giờ để màu là kênh nhận diện duy nhất.
+ * Bộ màu đã qua kiểm tra mù màu, nhưng màu vẫn không bao giờ là kênh nhận diện duy nhất: chấm
+ * màu luôn đi kèm tên cây.
  */
 
 const TONES = [
-  ['cà phê', 'leafdeep'],
-  ['hồ tiêu', 'pepper'],
-  ['sầu riêng', 'harvest'],
-  ['cao su', 'leaf'],
-  ['điều', 'clay'],
+  ['cà phê', 'crop-coffee'],
+  ['hồ tiêu', 'crop-pepper'],
+  ['sầu riêng', 'crop-durian'],
+  ['cao su', 'crop-rubber'],
+  ['điều', 'crop-cashew'],
 ];
 
-const FALLBACK = 'sky';
+// Cây ngoài danh sách (vd. ngô): xám, không lấy thêm sắc độ — sắc độ thứ sáu sẽ phá độ tách màu.
+const FALLBACK = 'crop-other';
 
 export function cropTone(cropName) {
   const name = (cropName ?? '').normalize('NFC').toLowerCase().trim();
