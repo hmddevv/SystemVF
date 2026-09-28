@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,7 +34,7 @@ const STEPS = [
   },
   {
     title: 'Trồng cây trên lô',
-    why: 'Khai loại cây, ngày trồng và số cây. Niên vụ do hệ thống tự tính theo loại cây; lời nhắc chăm sóc chạy ngay sau đó.',
+    why: 'Chọn các cây đang có trên lô; trồng xen thì chọn nhiều cây. Niên vụ do hệ thống tự tính theo loại cây, lời nhắc chăm sóc chạy ngay sau đó.',
   },
 ];
 
@@ -287,12 +287,21 @@ function PlotStep({ farm, onDone }) {
   );
 }
 
-/* ---------- Bước 3: lứa trồng ---------- */
+/* ---------- Bước 3: lứa trồng (xen canh: một lô, nhiều cây) ---------- */
+
+/*
+ * Một lô trồng xen có nhiều lứa (Epic B): chọn nhiều cây, mỗi cây một thẻ với ngày trồng, số cây
+ * riêng — cà phê trồng năm 2016, tiêu trồng xen năm 2020 là chuyện thường. Mỗi cây là một lần
+ * POST /plots/{id}/plantings, gửi LẦN LƯỢT:
+ * - cây đã trồng xong thì khóa lại và không bao giờ gửi lại (backend chưa có khóa chống ghi trùng);
+ * - cây lỗi nghiệp vụ thì báo ngay trên thẻ của nó, các cây khác vẫn gửi tiếp;
+ * - mất mạng thì dừng, "Gửi lại" chỉ gửi những cây còn thiếu.
+ * Chỉ khi mọi cây đã xong mới ghi vào cache — lúc đó Tổng quan thay cho màn Bắt đầu.
+ */
 
 function buildPlantingSchema(today) {
-  return z.object({
-    plotId: z.string().min(1, { error: 'Chọn lô để trồng' }),
-    cropId: z.string().min(1, { error: 'Chọn loại cây' }),
+  const row = z.object({
+    cropId: z.string(),
     plantingDate: z
       .string()
       .min(1, { error: 'Chọn ngày trồng' })
@@ -305,34 +314,138 @@ function buildPlantingSchema(today) {
       }),
     alreadyProducing: z.boolean(),
   });
+  return z.object({
+    plotId: z.string().min(1, { error: 'Chọn lô để trồng' }),
+    rows: z.array(row).min(1, { error: 'Chọn ít nhất một loại cây' }),
+  });
 }
+
+const emptyRow = (cropId) => ({ cropId, plantingDate: '', treeCount: '', alreadyProducing: false });
 
 // Ô chọn dạng thẻ (lô, loại cây): cùng kiểu với form ghi hoạt động.
 const choiceClass =
-  'group flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-panel px-3 py-2 transition-colors hover:border-muted has-checked:border-leaf has-checked:bg-panel2 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-leaf';
+  'group flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-panel px-3 py-2 transition-colors hover:border-muted has-checked:border-leaf has-checked:bg-panel2 has-disabled:cursor-default has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-leaf';
 
-function CheckMark() {
+// Dấu chọn: tròn cho chọn một (lô), vuông cho chọn nhiều (cây) — đúng quy ước radio/checkbox.
+function CheckMark({ square = false }) {
   return (
     <span
       aria-hidden="true"
-      className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-line text-bg group-has-checked:border-leaf group-has-checked:bg-leaf"
+      className={`grid h-6 w-6 shrink-0 place-items-center border border-line text-bg group-has-checked:border-leaf group-has-checked:bg-leaf ${
+        square ? 'rounded-md' : 'rounded-full'
+      }`}
     >
       <Icon name="check" size={14} className="opacity-0 group-has-checked:opacity-100" />
     </span>
   );
 }
 
-function ChoiceGroup({ legend, error, errorId, children }) {
+function ChoiceGroup({ legend, hint, error, errorId, children }) {
+  const hintId = hint ? `${errorId}-hint` : null;
+  const describedBy = [hintId, error ? errorId : null].filter(Boolean).join(' ') || undefined;
   return (
     <fieldset
       className="min-w-0"
       aria-invalid={error ? true : undefined}
-      aria-describedby={error ? errorId : undefined}
+      aria-describedby={describedBy}
     >
       <legend className="mb-1.5 font-medium text-ink">{legend}</legend>
+      {hint && (
+        <p id={hintId} className="-mt-0.5 mb-2 text-sm text-muted">
+          {hint}
+        </p>
+      )}
       {children}
       <FieldError id={errorId} message={error} />
     </fieldset>
+  );
+}
+
+// Thẻ chi tiết của một cây đã chọn. Nhãn ô có tên cây ẩn cho trình đọc màn hình, để hai ô
+// "Ngày trồng" của hai cây không trùng tên.
+function CropRow({ index, crop, control, register, errors, result, locked, today }) {
+  const name = crop ? (crop.displayName ?? crop.name) : '';
+  const rowErrors = errors?.rows?.[index];
+  const prefix = `plant-${crop?.id ?? index}`;
+  const sr = <span className="sr-only">, {name}</span>;
+  return (
+    <li
+      className={`rounded-md border px-4 py-4 ${
+        result?.planting ? 'border-leaf/60 bg-panel' : 'border-line bg-panel2'
+      }`}
+    >
+      <p className="mb-3 flex items-center gap-2">
+        <CropDot cropName={crop?.name} size={12} />
+        <span className="min-w-0 flex-1 truncate font-medium text-ink">{name}</span>
+        {result?.planting && (
+          <span className="flex items-center gap-1 text-sm text-leaf">
+            <Icon name="check" size={16} /> Đã trồng
+          </span>
+        )}
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          id={`${prefix}-date`}
+          label={<>Ngày trồng{sr}</>}
+          error={rowErrors?.plantingDate?.message}
+        >
+          {({ id, describedBy, invalid }) => (
+            <input
+              id={id}
+              type="date"
+              max={today}
+              disabled={locked}
+              aria-invalid={invalid}
+              aria-describedby={describedBy}
+              className={`num ${inputClass} disabled:opacity-60`}
+              {...register(`rows.${index}.plantingDate`)}
+            />
+          )}
+        </Field>
+        <Field id={`${prefix}-trees`} label={<>Số cây{sr}</>} error={rowErrors?.treeCount?.message}>
+          {({ id, describedBy, invalid }) => (
+            <Controller
+              name={`rows.${index}.treeCount`}
+              control={control}
+              render={({ field }) => (
+                <DigitsInput
+                  id={id}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  disabled={locked}
+                  suffix="cây"
+                  placeholder="1.100"
+                  aria-invalid={invalid}
+                  aria-describedby={describedBy}
+                  className="disabled:opacity-60"
+                />
+              )}
+            />
+          )}
+        </Field>
+      </div>
+      <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-3 has-disabled:cursor-default">
+        <input
+          type="checkbox"
+          disabled={locked}
+          className="h-5 w-5 shrink-0 accent-leaf"
+          {...register(`rows.${index}.alreadyProducing`)}
+        />
+        <span className="text-ink">Đã cho thu hoạch{sr}</span>
+      </label>
+      {result?.error && !result.error.unreachable && (
+        <p
+          role="alert"
+          className="mt-3 rounded-md border border-clay/60 px-3 py-2 text-sm text-ink"
+        >
+          {result.error.status === 400 && result.error.errors?.length
+            ? 'Kiểm tra lại các ô được đánh dấu.'
+            : result.error.detail}
+        </p>
+      )}
+    </li>
   );
 }
 
@@ -341,61 +454,127 @@ function PlantingStep({ farm, plots, onDone }) {
   const queryClient = useQueryClient();
   const crops = useCrops();
   const today = todayIso();
+  // Kết quả theo cây: { [cropId]: { planting } | { error } }. Ref giữ bản mới nhất cho vòng gửi.
+  const [results, setResults] = useState({});
+  const resultsRef = useRef({});
   const form = useForm({
     resolver: zodResolver(buildPlantingSchema(today)),
     defaultValues: {
       // Một lô thì chọn sẵn — không bắt bấm một lựa chọn duy nhất
       plotId: plots.length === 1 ? String(plots[0].id) : '',
-      cropId: '',
-      plantingDate: '',
-      treeCount: '',
-      alreadyProducing: false,
+      rows: [],
     },
   });
   const { register, handleSubmit, setError, control, formState } = form;
+  const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
+  const rows = useWatch({ control, name: 'rows' }) ?? [];
   const errors = formState.errors;
+
+  const record = (cropId, value) => {
+    resultsRef.current = { ...resultsRef.current, [cropId]: value };
+    setResults(resultsRef.current);
+  };
+  const plantedCount = Object.values(results).filter((r) => r.planting).length;
+  const anyPlanted = plantedCount > 0;
 
   const mutation = useMutation({
     ...WRITE,
-    mutationFn: ({ plotId, body }) => api.plantings.plant(plotId, body),
-    onSuccess: (planting) => {
+    mutationFn: async ({ plotId, rows: toSend }) => {
+      let firstError = null;
+      for (const [index, row] of toSend.entries()) {
+        if (resultsRef.current[row.cropId]?.planting) continue; // đã trồng: không gửi lại
+        try {
+          const planting = await api.plantings.plant(plotId, {
+            cropId: Number(row.cropId),
+            plantingDate: row.plantingDate,
+            treeCount: Number(digitsOnly(row.treeCount)),
+            alreadyProducing: row.alreadyProducing,
+          });
+          record(row.cropId, { planting });
+        } catch (error) {
+          record(row.cropId, { error });
+          applyServerErrors(error, (field, value) => setError(`rows.${index}.${field}`, value), [
+            'plantingDate',
+            'treeCount',
+          ]);
+          firstError ??= error;
+          if (error.unreachable) break; // mất mạng: dừng, không gửi tiếp cây sau
+        }
+      }
+      if (firstError) throw firstError;
+      return Object.values(resultsRef.current)
+        .map((r) => r.planting)
+        .filter(Boolean);
+    },
+    onSuccess: (created) => {
       queryClient.setQueryData(['plantings', userId, farm.id, 'active'], (old = []) => [
         ...old,
-        planting,
+        ...created,
       ]);
-      // Lứa mới kéo theo lời nhắc chăm sóc (BR-18) và một dòng báo cáo với số 0 (BR-14)
+      // Lứa mới kéo theo lời nhắc chăm sóc (BR-18) và dòng báo cáo với số 0 (BR-14)
       ['plantings', 'reminders', 'seasons', 'profit-loss'].forEach((key) =>
         queryClient.invalidateQueries({ queryKey: [key] }),
       );
-      onDone(`Đã trồng ${planting.cropName} trên ${planting.plotName}.`);
+      onDone(`Đã trồng ${created.map((p) => p.cropName).join(', ')}.`);
     },
-    onError: (error) => applyServerErrors(error, setError, ['cropId', 'plantingDate', 'treeCount']),
   });
 
-  const onSubmit = handleSubmit((v) =>
-    mutation.mutate({
-      plotId: Number(v.plotId),
-      body: {
-        cropId: Number(v.cropId),
-        plantingDate: v.plantingDate,
-        treeCount: Number(digitsOnly(v.treeCount)),
-        alreadyProducing: v.alreadyProducing,
-      },
-    }),
-  );
+  const onSubmit = handleSubmit((v) => mutation.mutate({ plotId: Number(v.plotId), rows: v.rows }));
 
   // Xếp theo chữ cái tiếng Việt, các giống của cùng một cây nằm cạnh nhau
   const cropList = [...(crops.data ?? [])].sort((a, b) =>
     collator.compare(a.displayName ?? a.name, b.displayName ?? b.name),
   );
+  const cropById = new Map(cropList.map((c) => [String(c.id), c]));
+
+  const toggleCrop = (cropId, checked) => {
+    if (checked) {
+      append(emptyRow(cropId), { shouldFocus: false });
+      return;
+    }
+    const index = rows.findIndex((r) => r.cropId === cropId);
+    if (index >= 0) remove(index);
+    // Bỏ chọn một cây đang lỗi thì bỏ luôn lỗi cũ của nó
+    if (resultsRef.current[cropId]) {
+      const rest = { ...resultsRef.current };
+      delete rest[cropId];
+      resultsRef.current = rest;
+      setResults(rest);
+    }
+  };
+
+  const remaining = rows.length - plantedCount;
+  const idleLabel =
+    rows.length <= 1
+      ? 'Trồng cây'
+      : anyPlanted
+        ? `Trồng ${remaining} cây còn lại`
+        : `Trồng ${rows.length} loại cây`;
+  const error = mutation.error;
 
   return (
     <StepForm
       onSubmit={onSubmit}
       footer={
         <>
-          <SubmitError error={mutation.error} retryHint={RETRY_HINT} />
-          <SubmitButton mutation={mutation} label="Trồng cây" />
+          {error?.unreachable ? (
+            <SubmitError
+              error={error}
+              retryHint={
+                anyPlanted
+                  ? 'Các cây có dấu "Đã trồng" sẽ không gửi lại.'
+                  : 'Nếu vừa mất sóng giữa chừng, tải lại trang xem đã trồng chưa rồi mới gửi lại.'
+              }
+            />
+          ) : (
+            error && (
+              <p role="alert" className="mb-3 text-sm text-clay">
+                Có cây chưa trồng được, xem thông báo ở từng cây.
+                {anyPlanted ? ' Các cây đã trồng sẽ không gửi lại.' : ''}
+              </p>
+            )
+          )}
+          <SubmitButton mutation={mutation} label={idleLabel} />
         </>
       }
     >
@@ -408,6 +587,8 @@ function PlantingStep({ farm, plots, onDone }) {
                   type="radio"
                   value={String(p.id)}
                   className="sr-only"
+                  // Đã trồng một phần thì khóa lô — các cây còn lại phải vào cùng lô
+                  disabled={anyPlanted || mutation.isPending}
                   {...register('plotId')}
                 />
                 <span className="min-w-0 flex-1">
@@ -421,7 +602,12 @@ function PlantingStep({ farm, plots, onDone }) {
         </ChoiceGroup>
       )}
 
-      <ChoiceGroup legend="Loại cây" error={errors.cropId?.message} errorId="plant-crop-error">
+      <ChoiceGroup
+        legend="Cây trồng trên lô"
+        hint="Trồng xen thì chọn nhiều cây. Mỗi cây khai ngày trồng và số cây riêng."
+        error={errors.rows?.message ?? errors.rows?.root?.message}
+        errorId="plant-crop-error"
+      >
         {crops.isLoading ? (
           <LoadingBlock className="px-0" />
         ) : crops.error ? (
@@ -432,80 +618,61 @@ function PlantingStep({ farm, plots, onDone }) {
           </EmptyBlock>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
-            {cropList.map((c) => (
-              <label key={c.id} className={choiceClass}>
-                <input
-                  type="radio"
-                  value={String(c.id)}
-                  className="sr-only"
-                  {...register('cropId')}
-                />
-                <CropDot cropName={c.name} size={12} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium text-ink">{c.name}</span>
-                  <span className="block truncate text-sm text-muted">
-                    {[c.variety, c.perennial ? 'lâu năm' : 'ngắn ngày'].filter(Boolean).join(', ')}
+            {cropList.map((c) => {
+              const id = String(c.id);
+              return (
+                <label key={c.id} className={choiceClass}>
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={rows.some((r) => r.cropId === id)}
+                    // Cây đã trồng thì không bỏ chọn được — lứa đã có trên máy chủ
+                    disabled={Boolean(results[id]?.planting) || mutation.isPending}
+                    onChange={(e) => toggleCrop(id, e.target.checked)}
+                  />
+                  <CropDot cropName={c.name} size={12} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium text-ink">{c.name}</span>
+                    <span className="block truncate text-sm text-muted">
+                      {[c.variety, c.perennial ? 'lâu năm' : 'ngắn ngày']
+                        .filter(Boolean)
+                        .join(', ')}
+                    </span>
                   </span>
-                </span>
-                <CheckMark />
-              </label>
-            ))}
+                  <CheckMark square />
+                </label>
+              );
+            })}
           </div>
         )}
       </ChoiceGroup>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="plant-date" label="Ngày trồng" error={errors.plantingDate?.message}>
-          {({ id, describedBy, invalid }) => (
-            <input
-              id={id}
-              type="date"
-              max={today}
-              aria-invalid={invalid}
-              aria-describedby={describedBy}
-              className={`num ${inputClass}`}
-              {...register('plantingDate')}
-            />
-          )}
-        </Field>
-        <Field id="plant-trees" label="Số cây" error={errors.treeCount?.message}>
-          {({ id, describedBy, invalid }) => (
-            <Controller
-              name="treeCount"
-              control={control}
-              render={({ field }) => (
-                <DigitsInput
-                  id={id}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  suffix="cây"
-                  placeholder="1.100"
-                  aria-invalid={invalid}
-                  aria-describedby={describedBy}
-                />
-              )}
-            />
-          )}
-        </Field>
-      </div>
-
-      <label className="flex cursor-pointer items-start gap-3 rounded-md border border-line bg-panel px-3 py-3 has-checked:border-leaf has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-leaf">
-        <input
-          type="checkbox"
-          className="mt-0.5 h-5 w-5 shrink-0 accent-leaf"
-          aria-describedby="plant-producing-hint"
-          {...register('alreadyProducing')}
-        />
-        <span>
-          <span className="block font-medium text-ink">Vườn đã cho thu hoạch</span>
-          <span id="plant-producing-hint" className="block text-sm text-muted">
-            Chọn khi đưa một vườn có sẵn vào sổ, ví dụ vườn cà phê đã thu hoạch nhiều vụ. Bỏ trống
-            nếu cây mới trồng, còn đang kiến thiết cơ bản.
-          </span>
-        </span>
-      </label>
+      {fields.length > 0 && (
+        <section aria-labelledby="plant-rows-title">
+          <h3 id="plant-rows-title" className="font-medium text-ink">
+            Chi tiết từng cây
+          </h3>
+          <p className="mt-0.5 mb-3 text-sm text-muted">
+            &ldquo;Đã cho thu hoạch&rdquo;: chọn khi đưa vườn có sẵn vào sổ, ví dụ cà phê đã thu
+            nhiều vụ. Cây mới trồng, còn kiến thiết cơ bản thì bỏ trống.
+          </p>
+          <ol className="space-y-3">
+            {fields.map((f, index) => (
+              <CropRow
+                key={f.id}
+                index={index}
+                crop={cropById.get(f.cropId)}
+                control={control}
+                register={register}
+                errors={errors}
+                result={results[f.cropId]}
+                locked={Boolean(results[f.cropId]?.planting) || mutation.isPending}
+                today={today}
+              />
+            ))}
+          </ol>
+        </section>
+      )}
     </StepForm>
   );
 }

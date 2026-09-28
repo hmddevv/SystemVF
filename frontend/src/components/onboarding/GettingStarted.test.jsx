@@ -27,6 +27,14 @@ const CROPS = [
     seasonStartMonth: 2,
   },
   {
+    id: 3,
+    name: 'Hồ tiêu',
+    variety: 'Vĩnh Linh',
+    displayName: 'Hồ tiêu (Vĩnh Linh)',
+    perennial: true,
+    seasonStartMonth: 5,
+  },
+  {
     id: 7,
     name: 'Ngô',
     variety: 'LVN10',
@@ -71,7 +79,7 @@ function fakeBackend({ farms = [], plots = [], plantings = [] } = {}) {
       const plot = db.plots.find((p) => p.id === Number(params.plotId));
       const crop = CROPS.find((c) => c.id === body.cropId);
       const planting = {
-        id: 40,
+        id: 40 + db.plantings.length,
         plotId: plot.id,
         plotName: plot.name,
         cropId: crop.id,
@@ -135,6 +143,13 @@ function renderDashboard({ farmIds } = {}) {
   return user;
 }
 
+// Điền thẻ chi tiết của một cây đã chọn — nhãn ô mang tên cây để hai cây không trùng nhãn
+async function fillRow(user, cropName, { date, trees, producing = false }) {
+  await user.type(screen.getByLabelText(`Ngày trồng, ${cropName}`), date);
+  await user.type(screen.getByLabelText(`Số cây, ${cropName}`), trees);
+  if (producing) await user.click(screen.getByLabelText(`Đã cho thu hoạch, ${cropName}`));
+}
+
 const stepHeading = (name) => screen.findByRole('heading', { level: 2, name });
 
 describe('Bắt đầu lần đầu', () => {
@@ -187,10 +202,12 @@ describe('Bắt đầu lần đầu', () => {
     // Chỉ một lô: không bắt người dùng chọn
     expect(screen.queryByRole('group', { name: 'Lô' })).not.toBeInTheDocument();
 
-    await user.click(await screen.findByRole('radio', { name: /Cà phê/ }));
-    await user.type(screen.getByLabelText('Ngày trồng'), '2016-06-15');
-    await user.type(screen.getByLabelText('Số cây'), '1100');
-    await user.click(screen.getByRole('checkbox', { name: /Vườn đã cho thu hoạch/ }));
+    await user.click(await screen.findByRole('checkbox', { name: /^Cà phê/ }));
+    await fillRow(user, 'Cà phê (Robusta)', {
+      date: '2016-06-15',
+      trees: '1100',
+      producing: true,
+    });
     await user.click(screen.getByRole('button', { name: 'Trồng cây' }));
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Tổng quan' })).toBeInTheDocument();
@@ -200,6 +217,95 @@ describe('Bắt đầu lần đầu', () => {
         body: { cropId: 1, plantingDate: '2016-06-15', treeCount: 1100, alreadyProducing: true },
       },
     ]);
+  });
+
+  /*
+   * Xen canh (Epic B): một lô có nhiều lứa, mỗi cây khai ngày trồng và số cây riêng. Backend
+   * nhận một lứa mỗi lần gọi, nên N cây là N lần POST — gửi lần lượt, đúng thông tin của từng cây.
+   */
+  it('trồng xen: chọn nhiều cây trên một lô, mỗi cây một lứa với ngày trồng và số cây riêng', async () => {
+    const posts = fakeBackend({ farms: [FARM], plots: [PLOT] });
+    const user = renderDashboard();
+
+    await stepHeading('Trồng cây trên lô');
+    await user.click(await screen.findByRole('checkbox', { name: /^Cà phê/ }));
+    await user.click(screen.getByRole('checkbox', { name: /^Hồ tiêu/ }));
+    await fillRow(user, 'Cà phê (Robusta)', { date: '2016-06-15', trees: '1100', producing: true });
+    await fillRow(user, 'Hồ tiêu (Vĩnh Linh)', { date: '2020-05-10', trees: '400' });
+    await user.click(screen.getByRole('button', { name: 'Trồng 2 loại cây' }));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Tổng quan' })).toBeInTheDocument();
+    expect(posts).toEqual([
+      {
+        url: '/plots/9/plantings',
+        body: { cropId: 1, plantingDate: '2016-06-15', treeCount: 1100, alreadyProducing: true },
+      },
+      {
+        url: '/plots/9/plantings',
+        body: { cropId: 3, plantingDate: '2020-05-10', treeCount: 400, alreadyProducing: false },
+      },
+    ]);
+  });
+
+  it('một cây lỗi: cây đã trồng khóa lại, "Gửi lại" chỉ gửi cây còn thiếu', async () => {
+    const posts = fakeBackend({ farms: [FARM], plots: [PLOT] });
+    let pepperFails = true;
+    server.use(
+      http.post(api('/plots/:plotId/plantings'), async ({ request }) => {
+        const body = await request.clone().json();
+        if (body.cropId === 3 && pepperFails) {
+          pepperFails = false;
+          return problem(422, { detail: 'Ngày trồng trước ngày tạo lô.', rule: 'BR-02' });
+        }
+        return undefined; // chuyển tiếp cho backend giả
+      }),
+    );
+    const user = renderDashboard();
+
+    await stepHeading('Trồng cây trên lô');
+    await user.click(await screen.findByRole('checkbox', { name: /^Cà phê/ }));
+    await user.click(screen.getByRole('checkbox', { name: /^Hồ tiêu/ }));
+    await fillRow(user, 'Cà phê (Robusta)', { date: '2016-06-15', trees: '1100' });
+    await fillRow(user, 'Hồ tiêu (Vĩnh Linh)', { date: '2020-05-10', trees: '400' });
+    await user.click(screen.getByRole('button', { name: 'Trồng 2 loại cây' }));
+
+    // Vẫn ở bước 3: lỗi hiện đúng trên thẻ hồ tiêu, cà phê đã trồng và bị khóa
+    expect(await screen.findByText('Ngày trồng trước ngày tạo lô.')).toBeInTheDocument();
+    expect(screen.getByText('Đã trồng')).toBeInTheDocument();
+    expect(screen.getByLabelText('Số cây, Cà phê (Robusta)')).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /^Cà phê/ })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Trồng 1 cây còn lại' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Tổng quan' })).toBeInTheDocument();
+    // Cà phê chỉ được tạo MỘT lần
+    expect(posts.map((p) => p.body.cropId)).toEqual([1, 3]);
+  });
+
+  it('mất mạng giữa chừng: dừng ngay, không gửi tiếp cây sau, có mạng lại cũng không tự gửi', async () => {
+    fakeBackend({ farms: [FARM], plots: [PLOT] });
+    let calls = 0;
+    server.use(
+      http.post(api('/plots/:plotId/plantings'), () => {
+        calls += 1;
+        return HttpResponse.error();
+      }),
+    );
+    const user = renderDashboard();
+
+    await stepHeading('Trồng cây trên lô');
+    await user.click(await screen.findByRole('checkbox', { name: /^Cà phê/ }));
+    await user.click(screen.getByRole('checkbox', { name: /^Hồ tiêu/ }));
+    await fillRow(user, 'Cà phê (Robusta)', { date: '2016-06-15', trees: '1100' });
+    await fillRow(user, 'Hồ tiêu (Vĩnh Linh)', { date: '2020-05-10', trees: '400' });
+    onlineManager.setOnline(false);
+    await user.click(screen.getByRole('button', { name: 'Trồng 2 loại cây' }));
+
+    expect(await screen.findByText('Chưa gửi được')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gửi lại' })).toBeInTheDocument();
+    expect(calls).toBe(1);
+    onlineManager.setOnline(true);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(calls).toBe(1);
   });
 
   /*
@@ -223,16 +329,15 @@ describe('Bắt đầu lần đầu', () => {
     await user.click(screen.getByRole('button', { name: 'xem nông trại 5' }));
     await stepOf('Vườn nhà');
 
-    await user.click(await screen.findByRole('radio', { name: /Ngô/ }));
-    await user.type(screen.getByLabelText('Ngày trồng'), '2026-05-01');
-    await user.type(screen.getByLabelText('Số cây'), '5000');
+    await user.click(await screen.findByRole('checkbox', { name: /^Ngô/ }));
+    await fillRow(user, 'Ngô (LVN10)', { date: '2026-05-01', trees: '5000' });
     await user.click(screen.getByRole('button', { name: 'Trồng cây' }));
 
     await waitFor(() => expect(posts).toHaveLength(1));
     expect(posts[0].url).toBe('/plots/9/plantings');
   });
 
-  it('chặn ngay ở máy: ngày trồng ở tương lai, số cây 0, chưa chọn cây', async () => {
+  it('chặn ngay ở máy: chưa chọn cây nào; ngày trồng ở tương lai, số cây 0', async () => {
     fakeBackend({ farms: [FARM], plots: [PLOT] });
     let calls = 0;
     server.use(
@@ -244,17 +349,22 @@ describe('Bắt đầu lần đầu', () => {
     const user = renderDashboard();
 
     await stepHeading('Trồng cây trên lô');
-    await screen.findByRole('radio', { name: /Cà phê/ });
-    await user.type(screen.getByLabelText('Ngày trồng'), shiftDays(todayIso(), 1));
-    await user.type(screen.getByLabelText('Số cây'), '0');
+    await screen.findByRole('checkbox', { name: /^Cà phê/ });
+    await user.click(screen.getByRole('button', { name: 'Trồng cây' }));
+    expect(
+      await screen.findByRole('group', { name: 'Cây trồng trên lô' }),
+    ).toHaveAccessibleDescription(/Chọn ít nhất một loại cây/);
+
+    await user.click(screen.getByRole('checkbox', { name: /^Cà phê/ }));
+    await fillRow(user, 'Cà phê (Robusta)', { date: shiftDays(todayIso(), 1), trees: '0' });
     await user.click(screen.getByRole('button', { name: 'Trồng cây' }));
 
     expect(await screen.findByText('Ngày trồng không được ở tương lai')).toBeInTheDocument();
     expect(screen.getByText('Nhập số cây lớn hơn 0')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Loại cây' })).toHaveAccessibleDescription(
-      'Chọn loại cây',
+    expect(screen.getByLabelText('Số cây, Cà phê (Robusta)')).toHaveAttribute(
+      'aria-invalid',
+      'true',
     );
-    expect(screen.getByLabelText('Số cây')).toHaveAttribute('aria-invalid', 'true');
     expect(calls).toBe(0);
   });
 

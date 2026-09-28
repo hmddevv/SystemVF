@@ -301,7 +301,10 @@ trên dải (tháng 5–9) là hằng số hiển thị, khớp CARE-02.
    `components/form/` và form ghi hoạt động dùng lại. Tạo xong mỗi bước thì ghi thẳng kết quả vào
    cache nên bước sau hiện ngay, focus chuyển lên tiêu đề bước mới. Nút "Ghi" ẩn tới khi có lứa
    đang trồng. Đã chạy trọn ba bước với backend thật (user 2, xóa lại sau khi thử); axe-core
-   không có vi phạm ở cả bước đầu, bước cuối và khi đang báo lỗi. 27 test (thêm 9, gồm đổi nông trại giữa chừng không trồng nhầm lô). Sửa kèm hai
+   không có vi phạm ở cả bước đầu, bước cuối và khi đang báo lỗi. 27 test (thêm 9, gồm đổi nông trại giữa chừng không trồng nhầm lô). Bước 3 cho **chọn nhiều cây trên một lô** (xen canh,
+   Epic B): mỗi cây một thẻ riêng với ngày trồng, số cây, "đã cho thu hoạch"; gửi lần lượt mỗi
+   cây một `POST`, cây đã trồng khóa lại không gửi lại, cây lỗi báo trên thẻ của nó, mất mạng
+   thì dừng (30 test). Bản đầu chỉ cho chọn một cây — sai nghiệp vụ, chủ dự án phát hiện. Sửa kèm hai
    lỗi Tổng quan lộ ra với nông trại mới: nhãn trục "500 nghìn" bị cắt, biểu đồ chi phí toàn số
    0 vẽ đường phẳng thay vì nói "chưa ghi khoản chi nào".
    *Giới hạn:* nông trại có lô nhưng mọi lứa đều đã kết thúc cũng rơi vào bước 3, che mất lãi/lỗ
