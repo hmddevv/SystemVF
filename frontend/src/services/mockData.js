@@ -16,6 +16,24 @@ const PLOTS = [
   { id: 13, farmId: 1, name: 'Lô C1', areaM2: 6000, soilType: 'Đất xám' },
 ].map((p) => ({ ...p, areaHectares: p.areaM2 / 10000 }));
 
+// Danh mục cây: đúng dữ liệu tham chiếu nạp ở migration V2 (có ở mọi môi trường, không phải demo).
+const CROPS = [
+  ['Cà phê', 'Robusta', true, 2],
+  ['Cà phê', 'Arabica', true, 2],
+  ['Hồ tiêu', 'Vĩnh Linh', true, 5],
+  ['Sầu riêng', 'Ri6', true, 10],
+  ['Điều', 'PN1', true, 6],
+  ['Cao su', 'RRIM 600', true, 3],
+  ['Ngô', 'LVN10', false, null],
+].map(([name, variety, perennial, seasonStartMonth], i) => ({
+  id: i + 1,
+  name,
+  variety,
+  displayName: `${name} (${variety})`,
+  perennial,
+  seasonStartMonth,
+}));
+
 const PLANTINGS = [
   {
     id: 101,
@@ -343,6 +361,8 @@ const clone = (x) => JSON.parse(JSON.stringify(x));
 const stripPrivate = ({ _activities, ...rest }) => rest; // eslint-disable-line no-unused-vars
 
 export const farms = () => clone(FARMS);
+
+export const crops = () => clone(CROPS);
 
 export const plotsByFarm = (farmId) => clone(PLOTS.filter((p) => p.farmId === Number(farmId)));
 

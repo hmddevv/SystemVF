@@ -127,9 +127,14 @@ async function write(method, url, body) {
 export const api = {
   farms: {
     list: () => read('/farms', null, mock.farms),
+    create: (body) => write('post', '/farms', body),
   },
   plots: {
     byFarm: (farmId) => read(`/farms/${farmId}/plots`, null, () => mock.plotsByFarm(farmId)),
+    create: (farmId, body) => write('post', `/farms/${farmId}/plots`, body),
+  },
+  crops: {
+    list: () => read('/crops', null, mock.crops),
   },
   plantings: {
     // Mọi lứa của một nông trại trong một lần gọi, xếp theo tên lô (plan mục 6.1).
@@ -137,6 +142,7 @@ export const api = {
       read('/plantings', { farmId, activeOnly }, () => mock.plantingsOwned({ farmId, activeOnly })),
     byPlot: (plotId, activeOnly = true) =>
       read(`/plots/${plotId}/plantings`, { activeOnly }, () => mock.plantingsByPlot(plotId)),
+    plant: (plotId, body) => write('post', `/plots/${plotId}/plantings`, body),
   },
   seasons: {
     byPlanting: (plantingId) =>

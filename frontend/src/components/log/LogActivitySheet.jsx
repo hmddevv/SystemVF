@@ -18,6 +18,8 @@ import { useSession } from '../../hooks/useSession';
 import { useActivePlantings, useCurrentFarm, useMockActive } from '../../hooks/useFarmData';
 import { CropDot, EmptyBlock, ErrorBlock, LoadingBlock } from '../ui';
 import { Icon } from '../Icon';
+import { FieldError, SubmitError } from '../form/formParts';
+import { applyServerErrors, submitLabel } from '../form/formLogic';
 
 /*
  * Bảng "Ghi hoạt động" (plan 6.2, 6.6). Dùng ngoài vườn, một tay, sóng yếu:
@@ -100,15 +102,6 @@ function groupByPlot(plantings) {
     else groups.push({ plotId: p.plotId, plotName: p.plotName, items: [p] });
   });
   return groups;
-}
-
-function FieldError({ id, message }) {
-  if (!message) return null;
-  return (
-    <p id={id} className="mt-2 text-sm text-clay">
-      {message}
-    </p>
-  );
 }
 
 /*
@@ -265,35 +258,6 @@ function Success({ result, planting, onAgain, onDone }) {
   );
 }
 
-// Lỗi gửi: không kết nối được thì nói rõ nội dung vẫn còn và nhắc kiểm tra trước khi gửi lại —
-// request có thể đã tới máy chủ trước khi mất sóng.
-function SubmitError({ error }) {
-  if (!error) return null;
-  if (error.unreachable) {
-    return (
-      <div role="alert" className="mb-3 rounded-md border border-clay/60 px-3 py-2 text-sm">
-        <p className="font-semibold text-clay">Chưa gửi được</p>
-        <p className="mt-0.5 text-muted">
-          Không kết nối được máy chủ. Nội dung bạn nhập vẫn còn nguyên. Nếu vừa mất sóng giữa chừng,
-          xem lại nhật ký của cây này trước khi gửi lại để tránh ghi trùng.
-        </p>
-      </div>
-    );
-  }
-  if (error.status === 400 && error.errors?.length) {
-    return (
-      <p role="alert" className="mb-3 text-sm text-clay">
-        Kiểm tra lại các ô được đánh dấu bên trên.
-      </p>
-    );
-  }
-  return (
-    <p role="alert" className="mb-3 rounded-md border border-clay/60 px-3 py-2 text-sm text-ink">
-      {error.detail}
-    </p>
-  );
-}
-
 export function LogActivitySheet({ prefill, onClose }) {
   const dialogRef = useRef(null);
   const titleRef = useRef(null);
@@ -338,12 +302,7 @@ export function LogActivitySheet({ prefill, onClose }) {
       clearDraft(userId);
       setResult(data);
     },
-    onError: (error) => {
-      // 400 validation: gắn lỗi vào đúng ô theo tên trường của API
-      error.errors?.forEach(({ field, message }) => {
-        if (field in defaults) setError(field, { type: 'server', message });
-      });
-    },
+    onError: (error) => applyServerErrors(error, setError, Object.keys(defaults)),
   });
 
   useEffect(() => {
@@ -583,7 +542,10 @@ export function LogActivitySheet({ prefill, onClose }) {
             </div>
 
             <footer className="border-t border-line bg-panel px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-              <SubmitError error={mutation.error} />
+              <SubmitError
+                error={mutation.error}
+                retryHint="Nếu vừa mất sóng giữa chừng, xem lại nhật ký của cây này trước khi gửi lại để tránh ghi trùng."
+              />
               <p className="mb-3 min-h-5 truncate text-sm text-muted" aria-live="polite">
                 {selected && values.type
                   ? `${ACTIVITY_TYPE[values.type]} cho ${selected.cropName}, ${selected.plotName}`
@@ -595,11 +557,7 @@ export function LogActivitySheet({ prefill, onClose }) {
                   disabled={pending || !farm || list.length === 0}
                   className="min-h-12 flex-1 rounded-md bg-leaf px-5 font-semibold text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {pending
-                    ? 'Đang gửi…'
-                    : mutation.error?.unreachable
-                      ? 'Gửi lại'
-                      : 'Ghi hoạt động'}
+                  {submitLabel(mutation, 'Ghi hoạt động')}
                 </button>
                 <button
                   type="button"

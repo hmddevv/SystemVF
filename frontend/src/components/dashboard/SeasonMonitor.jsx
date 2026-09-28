@@ -11,7 +11,8 @@ import { formatMoney, formatMoneyShort } from '../../services/format';
 
 const VB_W = 600;
 const VB_H = 200;
-const M = { top: 12, right: 8, bottom: 30, left: 52 };
+// Lề trái đủ cho nhãn trục dài nhất ("500 nghìn"); 52 từng cắt mất chữ số đầu.
+const M = { top: 12, right: 8, bottom: 30, left: 70 };
 
 function niceMax(v) {
   if (v <= 0) return 1_000_000;
@@ -204,7 +205,8 @@ export function SeasonMonitor({ monitor, hasPlantings }) {
       title="Giám sát mùa vụ"
       aside={
         hasPlantings &&
-        !monitor.isPending && (
+        !monitor.isPending &&
+        total > 0 && (
           <p className="num text-sm text-muted">
             12 tháng qua đã chi <span className="text-ink">{formatMoney(total)}</span>
           </p>
@@ -221,33 +223,43 @@ export function SeasonMonitor({ monitor, hasPlantings }) {
         <>
           <div className="px-4">
             <h3 className="text-sm text-muted">Chi phí theo tháng</h3>
-            <CostChart months={monitor.months} />
-            {monitor.truncated && (
-              <p className="text-xs text-harvest">
-                Có niên vụ trên 200 hoạt động — biểu đồ chưa tính hết.
+            {total === 0 ? (
+              // Không vẽ đường phẳng ở 0: nói thẳng là chưa có gì, và cách để có
+              <p className="py-6 text-muted">
+                12 tháng qua chưa ghi khoản chi nào. Ghi hoạt động kèm chi phí thì biểu đồ sẽ hiện ở
+                đây.
               </p>
+            ) : (
+              <>
+                <CostChart months={monitor.months} />
+                {monitor.truncated && (
+                  <p className="text-xs text-harvest">
+                    Có niên vụ trên 200 hoạt động — biểu đồ chưa tính hết.
+                  </p>
+                )}
+                <details className="mt-1 text-sm">
+                  <summary className="min-h-11 cursor-pointer py-2 text-muted hover:text-ink">
+                    Xem dạng bảng
+                  </summary>
+                  <table className="num mb-3 w-full text-left">
+                    <thead className="text-muted">
+                      <tr>
+                        <th className="py-1 font-normal">Tháng</th>
+                        <th className="py-1 text-right font-normal">Chi phí</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monitor.months.map((m) => (
+                        <tr key={m.month} className="border-t border-line">
+                          <td className="py-1">{monthLabel(m.month).full}</td>
+                          <td className="py-1 text-right">{formatMoney(m.cost)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </details>
+              </>
             )}
-            <details className="mt-1 text-sm">
-              <summary className="min-h-11 cursor-pointer py-2 text-muted hover:text-ink">
-                Xem dạng bảng
-              </summary>
-              <table className="num mb-3 w-full text-left">
-                <thead className="text-muted">
-                  <tr>
-                    <th className="py-1 font-normal">Tháng</th>
-                    <th className="py-1 text-right font-normal">Chi phí</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monitor.months.map((m) => (
-                    <tr key={m.month} className="border-t border-line">
-                      <td className="py-1">{monthLabel(m.month).full}</td>
-                      <td className="py-1 text-right">{formatMoney(m.cost)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </details>
           </div>
           <h3 className="border-t border-line px-4 pt-3 text-sm text-muted">
             Tiến độ niên vụ hiện tại

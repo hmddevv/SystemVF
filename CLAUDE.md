@@ -155,8 +155,12 @@ Luật khi code frontend:
   liệu mẫu". **Thao tác ghi không bao giờ giả lập thành công.**
 - **Thao tác ghi (POST/PUT/DELETE) không tự thử lại** — backend chưa có idempotency key. Gửi lỗi
   thì giữ nội dung form, hiện "Chưa gửi được" + nút "Gửi lại". Mutation phải có
-  `networkMode: 'always'` (đã đặt mặc định trong `main.jsx`): chế độ mặc định của TanStack Query
+  `networkMode: 'always'` (đã đặt mặc định trong `services/queryClient.js`): chế độ mặc định của TanStack Query
   *treo* mutation khi offline rồi **tự gửi khi có mạng lại** — đã tái hiện được lỗi này.
+- Mọi form ghi báo lỗi qua `components/form/` (`FieldError`, `SubmitError`, `applyServerErrors`,
+  `submitLabel`, `DigitsInput` cho tiền/diện tích/số cây) — không tự viết lại cách báo lỗi.
+- Màn Bắt đầu (`components/onboarding/`) hiện khi chưa có nông trại / lô / lứa đang trồng; bước
+  suy ra từ dữ liệu trong `DashboardPage`, không lưu cờ.
 - Form ghi dùng chung một bảng `<dialog>` (`hooks/useLogActivity.jsx` + `components/log/`), mở
   bằng `useLogActivity().open({ plantingId, type })`. Lời nhắc truyền `suggestedActivity` của
   backend — không tự suy loại việc từ mã CARE-0x.
@@ -181,6 +185,6 @@ Luật khi code frontend:
 
 | Mốc | Nội dung |
 |---|---|
-| M6 | Phase 4: frontend. **M6a**: dựng `frontend/` → Tổng quan → `GET /plantings` → form ghi hoạt động → CI. **M6b**: lô đất, thu hoạch, sổ nhật ký, báo cáo |
+| M6 | Phase 4: frontend. **M6a**: dựng `frontend/` → Tổng quan → `GET /plantings` → form ghi hoạt động → CI → bắt đầu lần đầu. **M6b**: nông trại, lô, hồ sơ lứa trồng + vòng đời, danh mục cây. **M6c**: `GET /activities`, sổ nhật ký, thu hoạch, trang Nhật ký, Nhắc việc. **M6d**: báo cáo 3 chiều, luỹ kế/hoàn vốn, CSV. Mỗi mốc dừng duyệt |
 | M7 | Docker Compose cho cả hệ thống (backend + frontend + PostgreSQL), cấu hình triển khai |
 | Phase 5+ | JWT, phân quyền công nhân, giá thị trường, truy xuất nguồn gốc (`design.md` §8) |

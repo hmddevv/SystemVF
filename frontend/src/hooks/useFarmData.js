@@ -37,6 +37,19 @@ export function useActivePlantings(farmId) {
   });
 }
 
+// Có lứa đang canh tác thì mới có gì để ghi — nút "Ghi" ẩn khi chưa có, màn Bắt đầu dẫn đường.
+export function useCanLog() {
+  const { farm } = useCurrentFarm();
+  const plantings = useActivePlantings(farm?.id ?? null);
+  return farm != null && (plantings.data?.length ?? 0) > 0;
+}
+
+// Danh mục cây dùng chung cho mọi chủ nông trại (dữ liệu tham chiếu, migration V2).
+export function useCrops() {
+  const { userId } = useSession();
+  return useQuery({ queryKey: ['crops', userId], queryFn: api.crops.list });
+}
+
 /*
  * Lô đất kèm các lứa đang canh tác của từng lô: hai lần gọi cố định, ghép theo plotId ở máy.
  * Vẫn cần danh sách lô riêng — lô chưa trồng gì cũng phải hiện trên sơ đồ.

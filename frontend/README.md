@@ -41,7 +41,8 @@ src/
   services/    nơi DUY NHẤT gọi HTTP và biết tên trường API (api.js), dữ liệu mẫu,
                nhãn tiếng Việt của enum, định dạng tiền/ngày, cấu hình TanStack Query
   hooks/       bọc TanStack Query cho từng màn; phiên (người dùng, nông trại); mở form ghi
-  components/  mảnh dùng lại: khung, panel, biểu đồ Tổng quan, form ghi hoạt động
+  components/  mảnh dùng lại: khung, panel, biểu đồ Tổng quan, form ghi hoạt động,
+               màn Bắt đầu (onboarding/), phần báo lỗi dùng chung của mọi form ghi (form/)
   pages/       mỗi file một màn
   test/        cấu hình Vitest và máy chủ MSW
 ```
@@ -62,4 +63,7 @@ src/
 ## Giới hạn đã biết
 
 - Chưa đồng bộ offline: mất sóng thì người dùng tự bấm "Gửi lại"; nháp chỉ lưu trên một máy.
-- Lô đất, cây trồng, nhật ký, báo cáo chi tiết làm ở M6b — hiện là trang "sắp có".
+- Nông trại có lô mà mọi lứa đã kết thúc sẽ hiện lại màn Bắt đầu (bước 3) thay cho Tổng quan —
+  xem lại ở M6b khi có màn kết thúc lứa.
+- Lô đất, lứa trồng, nhật ký, nhắc việc, báo cáo chi tiết làm ở M6b–M6d (plan mục 7) — hiện là
+  trang "sắp có".

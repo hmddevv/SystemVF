@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 import { Icon } from '../Icon';
 import { Topbar } from './Topbar';
-import { useCurrentFarm, useMockActive } from '../../hooks/useFarmData';
+import { useCanLog, useMockActive } from '../../hooks/useFarmData';
 import { LogActivityProvider, useLogActivity } from '../../hooks/useLogActivity';
 
 const NAV = [
@@ -60,8 +60,8 @@ function MockBanner() {
  */
 function MobileLogButton() {
   const { open } = useLogActivity();
-  const { farm } = useCurrentFarm();
-  if (!farm) return null;
+  const canLog = useCanLog();
+  if (!canLog) return null; // chưa có cây đang trồng thì chưa có gì để ghi — màn Bắt đầu dẫn đường
   return (
     <button
       type="button"

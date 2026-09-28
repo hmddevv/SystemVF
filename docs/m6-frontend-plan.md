@@ -5,6 +5,9 @@ Tổng quan (dashboard) theo đặc tả của mình, bỏ mọi phần phải b
 đổi so với bản trước; mục 3 là hệ thống thiết kế hiện hành. Các mục còn lại giữ nguyên hiệu lực
 trừ chỗ mục 0 nói khác.
 
+Mở rộng (28/09/2026, chủ dự án duyệt): phần còn lại của M6 chia thành **M6b / M6c / M6d**, phủ
+đủ Epic A–F bằng API đã có; điều hướng thành 7 mục; thêm `GET /activities` ở M6c (mục 7).
+
 ---
 
 ## 0. Điều chỉnh theo phương án 2 (23/09/2026)
@@ -137,8 +140,9 @@ Màu không bao giờ là kênh thông tin duy nhất: chấm màu luôn đi kè
 └──┴──────────────────────────────────────────────────────────────┘
 ```
 
-- Thanh icon dọc bên trái: Tổng quan, Lô đất, Cây trồng, Nhật ký, Báo cáo. Trên điện thoại
-  chuyển thành thanh dưới.
+- Thanh icon dọc bên trái, 7 mục (28/09/2026): Tổng quan · Nông trại & lô · Lứa trồng ·
+  Nhật ký · Nhắc việc · Báo cáo · Danh mục cây. Trên điện thoại thanh dưới giữ 4 mục dùng nhiều
+  nhất quanh nút "Ghi", các mục còn lại vào mục "Thêm" *(đề xuất, chốt khi duyệt M6b)*.
 - Viền mảnh `line`, không đổ bóng. Màu nhấn `leaf` dồn cho hành động chính.
 - Focus bàn phím: viền `leaf` 2px, lệch 2px.
 - Responsive: dưới 1024px hàng hero thành một cột; dưới 640px thanh bên thành thanh dưới.
@@ -174,7 +178,7 @@ ngoài nắng. Chủ dự án chọn nền tối và màn Tổng quan. Hai mocku
 
 | # | Câu hỏi | Chốt |
 |---|---|---|
-| 1 | Chia M6? | **M6a** (nền tảng + Hôm nay + sổ nhật ký + bắt đầu lần đầu) và **M6b** (quản lý nông trại/lô/lứa trồng/danh mục + lãi/lỗ). Điểm dừng rơi đúng lúc giao diện đã dùng được thật, thay vì làm xong 6 màn mới biết hướng thiết kế có đúng không |
+| 1 | Chia M6? | **M6a** (nền tảng + Tổng quan + ghi hoạt động + bắt đầu lần đầu), rồi **M6b** (đất & cây), **M6c** (nhật ký & thu hoạch), **M6d** (báo cáo & phân tích) — chi tiết ở mục 7. Mỗi mốc dừng duyệt: biết sớm hướng thiết kế có đúng không thay vì làm xong mọi màn mới xem. *(28/09/2026: thay cách chia M6a/M6b ban đầu; sổ nhật ký chuyển từ M6a sang M6c)* |
 | 2 | Tailwind v4 hay v3? | **v4**, bản ổn định mới nhất (4.3.x lúc chốt), plugin `@tailwindcss/vite`. Bỏ `tailwind.config.js`, khai báo token bằng `@theme` trong CSS. Chấp nhận yêu cầu Safari 16.4+ / Chrome 111+ / Firefox 128+ |
 | 3 | Client gọi API | *(Thay bằng axios ở mục 0.)* ~~**Sinh tự động** từ `docs/openapi.json` bằng `openapi-typescript` + `openapi-fetch` — backend đổi tên một trường là frontend đỏ ngay lúc biên dịch. Đây là lý do ADR-15 tồn tại~~ |
 | 4 | Quản lý trạng thái server | **TanStack Query v5** — cache, invalidate sau khi ghi. Retry chỉ cho truy vấn đọc; **thao tác ghi không tự thử lại** (mục 6.2) |
@@ -243,17 +247,17 @@ trên dải (tháng 5–9) là hằng số hiển thị, khớp CARE-02.
 
 | Hạng mục | Chốt |
 |---|---|
-| Nền | Vite + React 19 + TypeScript (strict) |
+| Nền | Vite + React 19 + JavaScript (JSX) — *mục 0* |
 | Router | React Router |
 | Form | react-hook-form + zod; `errors[]` gắn vào từng ô, lỗi khác hiện `detail` |
-| Thành phần khó (dialog, toast) | Radix UI primitives, tự style theo token |
+| Thành phần khó (dialog, toast) | `<dialog>` gốc của trình duyệt (ADR-16), tự style theo token; không thêm Radix |
 | Test | Vitest + Testing Library + MSW (giả lập API theo `openapi.json`) |
 | Lint / định dạng | ESLint (flat config) + Prettier |
 | Node | Ghim **Node 24 LTS** bằng `.nvmrc` và `engines`; CI dùng cùng bản |
 | Font | Tự host bằng `@fontsource/*` (subset `vietnamese`), không gọi Google Fonts lúc chạy |
 | Trạng thái màn hình | Mọi màn có đủ: đang tải, lỗi, trống; một Error Boundary ở gốc |
 | Dung lượng | Tách code theo route; ngưỡng JS gzip cho màn đầu tiên ghi trong README frontend |
-| CI | Job `frontend` trong `build.yml`: `npm ci` → sinh kiểu từ `openapi.json` → `git diff --exit-code` file kiểu → typecheck → lint → test → build |
+| CI | Job `frontend` trong `build.yml`: `npm ci` → lint → Prettier → test → build (không sinh kiểu — mục 0) |
 
 ### 6.8 Để sau, ghi nhận là giới hạn đã biết
 
@@ -287,15 +291,63 @@ trên dải (tháng 5–9) là hằng số hiển thị, khớp CARE-02.
    Prettier, Vitest, build); 18 test gồm lớp gọi API và form ghi, trong đó có test hồi quy
    chống tự gửi lại khi mất mạng (đã kiểm: bỏ `networkMode: 'always'` thì test đỏ). Cấu hình
    TanStack Query tách ra `services/queryClient.js` để test chạy đúng cấu hình thật.
+6. **Bắt đầu lần đầu** (6.3) — ba form tạo tối thiểu: nông trại (`POST /farms`) → lô
+   (`POST /farms/{id}/plots`) → lứa trồng (`POST /plots/{id}/plantings`, cây lấy từ `GET /crops`,
+   danh mục có sẵn từ `V2`). Bước hiện tại suy ra từ dữ liệu (chưa có nông trại → 1, có nông
+   trại chưa có lô → 2, có lô chưa có lứa đang trồng → 3), không lưu cờ riêng. Xử lý lỗi dùng
+   chung với form ghi (`errors[]` vào ô, `detail`, "Chưa gửi được" + "Gửi lại"). *Bổ sung
+   28/09/2026: mục 6.3 xếp phần này vào M6a nhưng danh sách bước ở đây từng bỏ sót.*
+   **Xong** — `components/onboarding/GettingStarted.jsx`; phần báo lỗi tách ra
+   `components/form/` và form ghi hoạt động dùng lại. Tạo xong mỗi bước thì ghi thẳng kết quả vào
+   cache nên bước sau hiện ngay, focus chuyển lên tiêu đề bước mới. Nút "Ghi" ẩn tới khi có lứa
+   đang trồng. Đã chạy trọn ba bước với backend thật (user 2, xóa lại sau khi thử); axe-core
+   không có vi phạm ở cả bước đầu, bước cuối và khi đang báo lỗi. 27 test (thêm 9, gồm đổi nông trại giữa chừng không trồng nhầm lô). Sửa kèm hai
+   lỗi Tổng quan lộ ra với nông trại mới: nhãn trục "500 nghìn" bị cắt, biểu đồ chi phí toàn số
+   0 vẽ đường phẳng thay vì nói "chưa ghi khoản chi nào".
+   *Giới hạn:* nông trại có lô nhưng mọi lứa đều đã kết thúc cũng rơi vào bước 3, che mất lãi/lỗ
+   lịch sử trên Tổng quan. Chưa xảy ra được ở M6a (chưa có màn kết thúc lứa) — xem lại ở M6b.
 
 **Xong M6a khi:** chạy được với backend thật, trên điện thoại thật qua wifi (`vite --host`) và có
 ảnh chụp; điểm Accessibility của Lighthouse ≥ 95; CI xanh → **dừng duyệt**.
 
-### M6b
+### M6b — Đất & cây (Epic A, B, C)
 
-Danh sách lô đất + chi tiết lô (lứa đang trồng, lịch sử, vòng đời, lý do kết thúc), trang thu
-hoạch, sổ nhật ký một lứa trồng + dải niên vụ, danh mục cây trồng, trang báo cáo (lãi/lỗ theo
-cây và theo niên vụ). Cùng tiêu chí xong như M6a.
+1. **Nông trại**: danh sách (số lô, tổng diện tích), tạo / sửa / xóa. Xóa bị chặn (409, BR-10)
+   thì hiện nguyên `detail` kèm việc cần làm trước.
+2. **Lô đất**: danh sách theo nông trại + chi tiết lô — các lứa đang trồng xen, **lịch sử sử
+   dụng đất** (dải thời gian các lứa đã kết thúc kèm lý do), nút "Trồng cây mới", sửa / xóa.
+3. **Hồ sơ lứa trồng** (màn trung tâm): cây, giống, tuổi, số cây; thanh vòng đời
+   *Kiến thiết → Kinh doanh → Đã kết thúc*; chuyển sang kinh doanh (`production-start`); kết
+   thúc lứa (`termination`, bắt buộc lý do trong 5 lý do); sửa ngày trồng / số cây.
+4. **Danh mục cây**: thêm / sửa cây và giống (lâu năm hay ngắn ngày, tháng bắt đầu niên vụ).
+5. Điều hướng 7 mục (mục 3). Nhật ký, Nhắc việc, Báo cáo còn là trang "sắp có" tới mốc của nó.
+
+### M6c — Nhật ký & thu hoạch (Epic D, E, F)
+
+1. **Backend `GET /api/v1/activities?farmId=&from=&to=&type=`** (phân trang): nhật ký toàn nông
+   trại một lần gọi, thay cho farms → lứa → niên vụ (N+1). Làm như `GET /plantings`: unit test,
+   `*IT` đếm câu SQL, cập nhật `openapi.json`, BR-11 trả 404. Cần thì thêm `GET /harvests` tương tự.
+2. **Sổ nhật ký một lứa** trong hồ sơ lứa trồng: dải niên vụ (nhãn, ngày từ API — 6.5), chọn
+   niên vụ xem tổng chi / thu / sản lượng / lãi, danh sách trộn hoạt động + thu hoạch (6.4),
+   sửa / xóa từng dòng.
+3. **Form ghi thu hoạch**: sản lượng kg, doanh thu (bỏ trống = chưa bán); giá/kg lấy từ response.
+   Thu hoạch đầu tiên tự chuyển lứa sang kinh doanh (BR-09) — báo lại cho người dùng.
+4. **Trang Nhật ký** toàn nông trại: lọc theo loại việc, lô, khoảng ngày.
+5. **Trang Nhắc việc**: đủ lời nhắc, nhóm theo mức độ, ghi luật sinh ra (CARE-01…04), nút "Ghi".
+
+### M6d — Báo cáo & phân tích (Epic E Phase 2)
+
+1. **Báo cáo** ba chiều `groupBy` = cây / lô / lứa, lọc niên vụ; bảng có chỉ số chuẩn hoá
+   (BR-15), cờ "số liệu ước lượng" cho lô trồng xen (BR-16).
+2. Theo lứa: **luỹ kế lãi/lỗ và niên vụ hoàn vốn** (BR-17) — biểu đồ theo skill `dataviz`.
+3. Xuất CSV từ đúng dữ liệu đang xem.
+4. Tổng quan thêm: tổng chi / thu / lãi niên vụ hiện tại, hoạt động gần đây (dùng API của M6c).
+
+**Mỗi mốc M6b–M6d xong khi** đạt cùng tiêu chí M6a: chạy với backend thật, ảnh trên điện thoại
+thật, Lighthouse Accessibility ≥ 95, CI xanh → dừng duyệt.
+
+**Không làm trong M6** (`design.md` §8, backend chưa có dữ liệu): vật tư đầu vào, giá thị trường,
+ảnh truy xuất nguồn gốc, cảm biến, phân quyền công nhân.
 
 ---
 

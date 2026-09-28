@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { DEV_USERS } from '../../services/api';
 import { useSession } from '../../hooks/useSession';
-import { useCurrentFarm } from '../../hooks/useFarmData';
+import { useCanLog, useCurrentFarm } from '../../hooks/useFarmData';
 import { useLogActivity } from '../../hooks/useLogActivity';
 import { Icon } from '../Icon';
 
@@ -76,8 +76,8 @@ function DevUserSwitcher() {
 
 function LogButton() {
   const { open } = useLogActivity();
-  const { farm } = useCurrentFarm();
-  if (!farm) return null; // chưa có nông trại thì chưa có gì để ghi — màn Bắt đầu dẫn đường
+  const canLog = useCanLog();
+  if (!canLog) return null; // chưa có cây đang trồng thì chưa có gì để ghi — màn Bắt đầu dẫn đường
   return (
     <button
       type="button"
