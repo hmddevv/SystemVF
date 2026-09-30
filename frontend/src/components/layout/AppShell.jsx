@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 import { Icon } from '../Icon';
 import { Topbar } from './Topbar';
-import { useCanLog, useMockActive } from '../../hooks/useFarmData';
+import { useCanLog, useMockActive, useRefetchMockOnReconnect } from '../../hooks/useFarmData';
 import { LogActivityProvider, useLogActivity } from '../../hooks/useLogActivity';
 
 const NAV = [
@@ -85,6 +85,7 @@ export function AppShell() {
 }
 
 function Shell() {
+  useRefetchMockOnReconnect();
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[88px_minmax(0,1fr)]">
       <nav

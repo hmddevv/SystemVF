@@ -1,6 +1,6 @@
-import { useSyncExternalStore } from 'react';
-import { useQueries, useQuery } from '@tanstack/react-query';
-import { api, mockStatus } from '../services/api';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, isMockData, onReconnect } from '../services/api';
 import { daysBetween, todayIso } from '../services/format';
 import { useSession } from './useSession';
 
@@ -9,8 +9,32 @@ import { useSession } from './useSession';
  * Chỉ có truy vấn đọc ở đây — thao tác ghi nằm trong hook mutation riêng, không tự thử lại.
  */
 
+const holdsMock = (query) => isMockData(query.state.data);
+
+// Còn truy vấn nào trong cache đang giữ dữ liệu mẫu không — dải báo dựa vào đây, không vào cờ chung.
 export function useMockActive() {
-  return useSyncExternalStore(mockStatus.subscribe, mockStatus.get);
+  const cache = useQueryClient().getQueryCache();
+  const subscribe = useCallback((fn) => cache.subscribe(fn), [cache]);
+  return useSyncExternalStore(subscribe, () => cache.getAll().some(holdsMock));
+}
+
+/*
+ * Backend chạy lại: tải lại mọi truy vấn còn giữ dữ liệu mẫu, kể cả truy vấn không ở trên màn hình.
+ * cancelRefetch: false — truy vấn vừa báo có kết nối lại đang về đích, hủy nó rồi gửi lại là thừa,
+ * và nếu có endpoint khác lỗi liên tục thì hai bên cứ thế hủy nhau thành vòng lặp.
+ */
+export function useRefetchMockOnReconnect() {
+  const queryClient = useQueryClient();
+  useEffect(
+    () =>
+      onReconnect(() =>
+        queryClient.invalidateQueries(
+          { predicate: holdsMock, refetchType: 'all' },
+          { cancelRefetch: false },
+        ),
+      ),
+    [queryClient],
+  );
 }
 
 export function useFarms() {
@@ -24,7 +48,7 @@ export function useCurrentFarm() {
   const farms = useFarms();
   const list = farms.data ?? [];
   const farm = list.find((f) => f.id === farmId) ?? list[0] ?? null;
-  return { ...farms, farms: list, farm };
+  return { ...farms, farms: list, farm, isMock: isMockData(farms.data) };
 }
 
 // Lứa đang canh tác của một nông trại — một lần gọi GET /plantings (plan 6.1).
@@ -72,6 +96,7 @@ export function usePlotsWithPlantings(farmId) {
   return {
     data,
     isPending: plots.isPending || plantings.isPending,
+    isMock: isMockData(plots.data) || isMockData(plantings.data),
     error: plots.error ?? plantings.error ?? null,
     refetch: () => {
       plots.refetch();
@@ -105,6 +130,25 @@ export function lastTwelveMonths(today = todayIso()) {
     const d = new Date(Date.UTC(y, m - 1 - (11 - i), 1));
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
   });
+}
+
+/*
+ * Lựa chọn cho bộ lọc báo cáo: báo cáo lọc theo SEASON.year (BR-13), nhãn lấy nguyên từ API (plan
+ * 6.5). Cùng một năm bắt đầu, cà phê là "2025/2026" còn cây ngắn ngày là "2025" — khác nhau thì
+ * hiện đủ các nhãn, không tự ghép.
+ * Giới hạn đã biết: chỉ có niên vụ của lứa đang canh tác; năm chỉ có lứa đã kết thúc thì chưa chọn
+ * được (M6a chưa kết thúc lứa được — xử lý cùng trang Báo cáo ở M6d).
+ */
+export function seasonOptions(seasons) {
+  const labelsByYear = new Map();
+  seasons.forEach((s) => {
+    const labels = labelsByYear.get(s.year) ?? new Set();
+    labels.add(s.label);
+    labelsByYear.set(s.year, labels);
+  });
+  return [...labelsByYear]
+    .sort(([a], [b]) => b - a)
+    .map(([year, labels]) => ({ year, label: [...labels].sort().reverse().join(' · ') }));
 }
 
 /*
@@ -170,14 +214,9 @@ export function useSeasonMonitor(plantings) {
     return { planting, season: current, ratio };
   });
 
-  // Mọi niên vụ đã có ghi chép — dùng cho bộ lọc báo cáo.
-  const years = [
-    ...new Set(seasonsByPlanting.flatMap(({ seasons }) => seasons.map((s) => s.year))),
-  ].sort((a, b) => b - a);
-
   return {
     months: months.map((m) => ({ month: m, cost: byMonth[m] })),
-    years,
+    seasonOptions: seasonOptions(seasonsByPlanting.flatMap(({ seasons }) => seasons)),
     progress,
     truncated,
     isPending: seasonQueries.some((q) => q.isPending) || activityQueries.some((q) => q.isPending),

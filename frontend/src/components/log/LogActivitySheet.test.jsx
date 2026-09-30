@@ -37,7 +37,7 @@ async function openSheet(prefill) {
   await user.click(screen.getByRole('button', { name: 'mở form' }));
   const sheet = await screen.findByRole('dialog', { name: 'Ghi hoạt động' });
   // Danh sách lứa trồng đã tải
-  await within(sheet).findByRole('radio', { name: /Cà phê/ });
+  await within(sheet).findAllByRole('radio', { name: /Cà phê/ });
   return { user, sheet };
 }
 
@@ -183,5 +183,19 @@ describe('Ghi hoạt động', () => {
     expect(within(sheet).getByRole('radio', { name: 'Tỉa cành' })).toBeChecked();
     expect(within(sheet).getByLabelText('Chọn ngày khác')).toHaveValue(todayIso());
     expect(within(sheet).getByLabelText('Chi phí, đồng')).toHaveValue('50.000');
+  });
+
+  it('danh sách cây là dữ liệu mẫu thì không cho gửi — id mẫu có thể trùng một lứa thật', async () => {
+    const requests = captureLog();
+    server.use(http.get(api('/plantings'), () => HttpResponse.error()));
+    const { user, sheet } = await openSheet();
+
+    expect(within(sheet).getByText(/Danh sách cây đang là dữ liệu mẫu/)).toBeInTheDocument();
+    await user.click(within(sheet).getAllByRole('radio', { name: /Cà phê/ })[0]);
+    await user.click(within(sheet).getByRole('radio', { name: 'Làm cỏ' }));
+    const submit = within(sheet).getByRole('button', { name: 'Ghi hoạt động' });
+    expect(submit).toBeDisabled();
+    await user.click(submit);
+    expect(requests).toHaveLength(0);
   });
 });

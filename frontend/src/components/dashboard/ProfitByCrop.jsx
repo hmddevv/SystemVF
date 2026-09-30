@@ -96,7 +96,7 @@ function Detail({ row, year }) {
   );
 }
 
-export function ProfitByCrop({ query, year, years, onYearChange }) {
+export function ProfitByCrop({ query, year, seasonOptions, onYearChange }) {
   const [activeId, setActiveId] = useState(null);
   const selectId = useId();
   const rows = query.data?.rows ?? [];
@@ -125,9 +125,9 @@ export function ProfitByCrop({ query, year, years, onYearChange }) {
             className="min-h-11 rounded-md border border-line bg-panel2 px-2 text-sm text-ink"
           >
             <option value="">Mọi niên vụ</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}/{y + 1}
+            {seasonOptions.map((s) => (
+              <option key={s.year} value={s.year}>
+                {s.label}
               </option>
             ))}
           </select>

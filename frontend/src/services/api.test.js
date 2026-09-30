@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { api, mockStatus, setUserId } from './api';
+import { api, isMockData, onReconnect, setUserId } from './api';
 import { api as path, problem, server } from '../test/server';
 
 describe('truy vấn đọc', () => {
@@ -17,16 +17,26 @@ describe('truy vấn đọc', () => {
     expect(header).toBe('2');
   });
 
-  it('mất kết nối thì lấy dữ liệu mẫu và bật cờ để giao diện báo rõ', async () => {
+  it('mất kết nối thì lấy dữ liệu mẫu, đánh dấu trên chính kết quả', async () => {
     server.use(http.get(path('/farms'), () => HttpResponse.error()));
     const farms = await api.farms.list();
     expect(farms.length).toBeGreaterThan(0);
-    expect(mockStatus.get()).toBe(true);
+    expect(isMockData(farms)).toBe(true);
 
-    // Có kết nối lại thì tắt cờ
+    server.use(http.get(path('/farms'), () => HttpResponse.json([])));
+    expect(isMockData(await api.farms.list())).toBe(false);
+  });
+
+  it('có kết nối lại sau khi đã dùng dữ liệu mẫu thì báo một lần', async () => {
+    let calls = 0;
+    const stop = onReconnect(() => (calls += 1));
+    server.use(http.get(path('/farms'), () => HttpResponse.error()));
+    await api.farms.list();
     server.use(http.get(path('/farms'), () => HttpResponse.json([])));
     await api.farms.list();
-    expect(mockStatus.get()).toBe(false);
+    await api.farms.list();
+    stop();
+    expect(calls).toBe(1);
   });
 
   it('lỗi nghiệp vụ thật của backend không bị che bằng dữ liệu mẫu', async () => {

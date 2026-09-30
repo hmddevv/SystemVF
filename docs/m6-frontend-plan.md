@@ -309,6 +309,25 @@ trên dải (tháng 5–9) là hằng số hiển thị, khớp CARE-02.
    0 vẽ đường phẳng thay vì nói "chưa ghi khoản chi nào".
    *Giới hạn:* nông trại có lô nhưng mọi lứa đều đã kết thúc cũng rơi vào bước 3, che mất lãi/lỗ
    lịch sử trên Tổng quan. Chưa xảy ra được ở M6a (chưa có màn kết thúc lứa) — xem lại ở M6b.
+7. **Sửa sau rà soát nghiệp vụ** (30/09/2026, agent `br-reviewer`).
+   - Bộ lọc niên vụ của lãi/lỗ tự ghép `năm/năm+1`, nên cây ngắn ngày hiện sai. Nay lấy nguyên
+     `label` của API (6.5); cùng một năm mà nhãn khác nhau thì hiện đủ các nhãn.
+   - Dấu "dữ liệu mẫu" từng là một cờ chung: một lần đọc thành công là tắt dải báo, trong khi sơ đồ
+     lô, lãi/lỗ… vẫn là dữ liệu mẫu. Nay dấu nằm trên từng kết quả, dải báo hiện chừng nào cache còn
+     dữ liệu mẫu, và có kết nối lại thì tải lại các truy vấn đó. `structuralSharing` riêng để dấu
+     không rơi mất.
+     Khi có kết nối lại, lần đọc vừa thành công không bị hủy rồi gửi lại (`cancelRefetch: false`).
+   - Danh sách lứa là dữ liệu mẫu thì form ghi không cho gửi, vì id mẫu có thể trùng một lứa thật.
+     Nút "Ghi" của lời nhắc mẫu cũng bị khóa. Màn Bắt đầu không hiện khi dữ liệu là mẫu.
+   - 39 test. Gỡ từng phần sửa ra thì test hồi quy tương ứng đỏ: structural sharing, khóa nút gửi,
+     khóa lời nhắc, không gửi lại hai lần, và tải lại khi có kết nối lại.
+
+   *Giới hạn còn lại:* bộ lọc chỉ có niên vụ của lứa đang canh tác. Năm chỉ có lứa đã kết thúc thì
+   chưa chọn được; làm cùng trang Báo cáo ở M6d. Các điểm rủi ro thấp chưa làm:
+   - 5xx không kèm `type` bị coi là mất kết nối;
+   - bộ chọn user dev có thể lệch khi trình duyệt chặn localStorage;
+   - ADR-16 ghi "tên trường chỉ ở `services/`" nhưng component vẫn đọc DTO và tự dựng request body.
+     Việc này chờ chủ dự án chọn hướng.
 
 **Xong M6a khi:** chạy được với backend thật, trên điện thoại thật qua wifi (`vite --host`) và có
 ảnh chụp; điểm Accessibility của Lighthouse ≥ 95; CI xanh → **dừng duyệt**.

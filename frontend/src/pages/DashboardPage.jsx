@@ -24,7 +24,13 @@ const GettingStarted = lazy(() =>
  */
 
 export function DashboardPage() {
-  const { farm, isPending: farmsPending, error: farmsError, refetch } = useCurrentFarm();
+  const {
+    farm,
+    isPending: farmsPending,
+    error: farmsError,
+    refetch,
+    isMock: farmsMock,
+  } = useCurrentFarm();
   const farmId = farm?.id ?? null;
   const [year, setYear] = useState(null);
 
@@ -40,12 +46,13 @@ export function DashboardPage() {
   /*
    * Bắt đầu lần đầu (plan 6.3): bước suy ra từ dữ liệu, không từ cờ lưu riêng. Lô đang tải thì
    * chờ — hiện Tổng quan rồi mới nhảy sang màn Bắt đầu sẽ giật. Lỗi tải lô thì để Tổng quan hiện
-   * lỗi như thường, không đoán là "chưa có lô".
+   * lỗi như thường, không đoán là "chưa có lô". Đang là dữ liệu mẫu thì không dẫn qua màn Bắt đầu:
+   * form ở đó ghi vào id lấy từ dữ liệu mẫu.
    */
   if (farm && plots.isPending) return <LoadingBlock />;
   const step = !farm
     ? 1
-    : plots.error
+    : plots.error || farmsMock || plots.isMock
       ? null
       : plots.data.length === 0
         ? 2
@@ -81,7 +88,12 @@ export function DashboardPage() {
 
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <SeasonMonitor monitor={monitor} hasPlantings={plantings.length > 0} />
-        <ProfitByCrop query={profit} year={year} years={monitor.years} onYearChange={setYear} />
+        <ProfitByCrop
+          query={profit}
+          year={year}
+          seasonOptions={monitor.seasonOptions}
+          onYearChange={setYear}
+        />
       </div>
     </div>
   );

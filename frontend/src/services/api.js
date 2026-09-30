@@ -77,37 +77,44 @@ function toApiError(err) {
 }
 
 /*
- * Trạng thái "đang dùng dữ liệu mẫu": bật khi một truy vấn đọc phải lấy dữ liệu mẫu vì không kết
- * nối được backend. Giao diện luôn hiện dải báo khi cờ này bật — không bao giờ giả vờ là dữ liệu thật.
+ * Dữ liệu mẫu được đánh dấu trên CHÍNH kết quả trả về, không bằng một cờ chung: một lần đọc thành
+ * công không có nghĩa mọi dữ liệu đang hiện đã là thật. Giao diện hỏi từng kết quả (isMockData) —
+ * dải báo còn hiện chừng nào cache còn một kết quả mẫu.
  */
-const mockListeners = new Set();
-let mockActive = false;
+const MOCK = Symbol('farm.mockData');
 
-function setMockActive(value) {
-  if (mockActive === value) return;
-  mockActive = value;
-  mockListeners.forEach((fn) => fn());
+export function isMockData(data) {
+  return data != null && typeof data === 'object' && data[MOCK] === true;
 }
 
-export const mockStatus = {
-  get: () => mockActive,
-  subscribe(fn) {
-    mockListeners.add(fn);
-    return () => mockListeners.delete(fn);
-  },
-};
+function markMock(data) {
+  if (data != null && typeof data === 'object') Object.defineProperty(data, MOCK, { value: true });
+  return data;
+}
 
-// Truy vấn đọc: mất kết nối thì lấy dữ liệu mẫu (nếu có) và bật cờ.
+// Có kết nối lại sau khi đã phải dùng dữ liệu mẫu: báo để tải lại những truy vấn còn giữ dữ liệu mẫu.
+const reconnectListeners = new Set();
+let servedMock = false;
+
+export function onReconnect(fn) {
+  reconnectListeners.add(fn);
+  return () => reconnectListeners.delete(fn);
+}
+
+// Truy vấn đọc: mất kết nối thì lấy dữ liệu mẫu (nếu có), đã đánh dấu là mẫu.
 async function read(url, params, fallback) {
   try {
     const res = await http.get(url, { params });
-    setMockActive(false);
+    if (servedMock) {
+      servedMock = false;
+      reconnectListeners.forEach((fn) => fn());
+    }
     return res.data;
   } catch (err) {
     const apiError = toApiError(err);
     if (apiError.unreachable && fallback) {
-      setMockActive(true);
-      return fallback();
+      servedMock = true;
+      return markMock(await fallback());
     }
     throw apiError;
   }

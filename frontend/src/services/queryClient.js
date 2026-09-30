@@ -1,4 +1,14 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, replaceEqualDeep } from '@tanstack/react-query';
+import { isMockData } from './api';
+
+/*
+ * Structural sharing mặc định dựng lại object theo Object.keys nên làm rơi dấu "dữ liệu mẫu", và
+ * khi dữ liệu thật trùng nội dung với bản mẫu thì giữ lại object mẫu cũ. Có dữ liệu mẫu ở một phía
+ * thì lấy nguyên kết quả mới.
+ */
+function shareUnlessMock(oldData, newData) {
+  return isMockData(oldData) || isMockData(newData) ? newData : replaceEqualDeep(oldData, newData);
+}
 
 /*
  * Cấu hình TanStack Query dùng chung cho ứng dụng và test — test phải chạy đúng cấu hình thật,
@@ -14,7 +24,13 @@ import { QueryClient } from '@tanstack/react-query';
 export function createQueryClient(overrides = {}) {
   return new QueryClient({
     defaultOptions: {
-      queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30_000, ...overrides.queries },
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+        staleTime: 30_000,
+        structuralSharing: shareUnlessMock,
+        ...overrides.queries,
+      },
       mutations: { retry: 0, networkMode: 'always' },
     },
   });

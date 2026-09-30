@@ -1,4 +1,5 @@
 import { CropDot, EmptyBlock, ErrorBlock, LoadingBlock, Panel } from '../ui';
+import { isMockData } from '../../services/api';
 import { formatDayMonth } from '../../services/format';
 import { ACTIVITY_TYPE } from '../../services/labels';
 import { useLogActivity } from '../../hooks/useLogActivity';
@@ -12,7 +13,7 @@ import { useLogActivity } from '../../hooks/useLogActivity';
  * Nút "Ghi" mở form với lứa trồng và việc gợi ý điền sẵn. Ghi xong, lời nhắc tự biến mất vì
  * backend tính lại từ nhật ký — đó là cách duy nhất để "xong" một lời nhắc.
  */
-function ReminderRow({ reminder }) {
+function ReminderRow({ reminder, mock }) {
   const { open } = useLogActivity();
   const late = reminder.severity === 'OVERDUE';
   const days = Math.abs(reminder.daysOverdue);
@@ -42,8 +43,9 @@ function ReminderRow({ reminder }) {
         onClick={() =>
           open({ plantingId: reminder.plantingId, type: reminder.suggestedActivity ?? null })
         }
+        disabled={mock}
         aria-label={`Ghi ${action} cho ${reminder.cropName}, ${reminder.plotName}`}
-        className="min-h-11 rounded-md border border-line px-4 text-sm font-medium text-ink hover:border-leaf hover:text-leaf"
+        className="min-h-11 rounded-md border border-line px-4 text-sm font-medium text-ink hover:border-leaf hover:text-leaf disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-line disabled:hover:text-ink"
       >
         Ghi
       </button>
@@ -51,7 +53,7 @@ function ReminderRow({ reminder }) {
   );
 }
 
-function ReminderGroup({ title, items, empty }) {
+function ReminderGroup({ title, items, empty, mock }) {
   return (
     <Panel
       title={title}
@@ -64,7 +66,7 @@ function ReminderGroup({ title, items, empty }) {
       ) : (
         <ul>
           {items.map((r) => (
-            <ReminderRow key={`${r.ruleCode}-${r.plantingId}`} reminder={r} />
+            <ReminderRow key={`${r.ruleCode}-${r.plantingId}`} reminder={r} mock={mock} />
           ))}
         </ul>
       )}
@@ -87,13 +89,21 @@ export function ReminderPanel({ query }) {
       </Panel>
     );
   }
+  // Lời nhắc mẫu mang id lứa mẫu: bấm "Ghi" sẽ điền sẵn một id có thể trùng lứa thật khác cây.
+  const mock = isMockData(query.data);
   const overdue = query.data.filter((r) => r.severity === 'OVERDUE');
   const soon = query.data.filter((r) => r.severity !== 'OVERDUE');
   return (
     <div className="flex flex-col gap-4">
-      <ReminderGroup title="Cảnh báo" items={overdue} empty="Không có việc chăm sóc nào quá hạn." />
+      <ReminderGroup
+        title="Cảnh báo"
+        items={overdue}
+        empty="Không có việc chăm sóc nào quá hạn."
+        mock={mock}
+      />
       <ReminderGroup
         title="Sắp đến hạn"
+        mock={mock}
         items={soon}
         empty="Không có việc nào đến hạn trong 7 ngày tới."
       />

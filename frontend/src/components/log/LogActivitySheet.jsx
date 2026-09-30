@@ -3,7 +3,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../services/api';
+import { api, isMockData } from '../../services/api';
 import { ACTIVITY_TYPE } from '../../services/labels';
 import {
   digitsOnly,
@@ -15,7 +15,7 @@ import {
   todayIso,
 } from '../../services/format';
 import { useSession } from '../../hooks/useSession';
-import { useActivePlantings, useCurrentFarm, useMockActive } from '../../hooks/useFarmData';
+import { useActivePlantings, useCurrentFarm } from '../../hooks/useFarmData';
 import { CropDot, EmptyBlock, ErrorBlock, LoadingBlock } from '../ui';
 import { Icon } from '../Icon';
 import { FieldError, SubmitError } from '../form/formParts';
@@ -266,7 +266,8 @@ export function LogActivitySheet({ prefill, onClose }) {
   const { userId } = useSession();
   const { farm } = useCurrentFarm();
   const plantings = useActivePlantings(farm?.id ?? null);
-  const mockActive = useMockActive();
+  // Danh sách lứa là dữ liệu mẫu thì id cũng là id mẫu: gửi đi có thể ghi nhầm vào một lứa thật.
+  const plantingsMock = isMockData(plantings.data);
   const queryClient = useQueryClient();
   const [result, setResult] = useState(null);
 
@@ -387,9 +388,10 @@ export function LogActivitySheet({ prefill, onClose }) {
           </button>
         </header>
 
-        {mockActive && !result && (
+        {plantingsMock && !result && (
           <p className="border-b border-harvest/40 px-5 py-2 text-sm text-harvest">
-            Đang xem dữ liệu mẫu vì không kết nối được máy chủ — lúc này ghi sẽ không lưu được.
+            Danh sách cây đang là dữ liệu mẫu vì không kết nối được máy chủ — chưa ghi được. Kết nối
+            lại rồi mở lại bảng này.
           </p>
         )}
 
@@ -554,7 +556,7 @@ export function LogActivitySheet({ prefill, onClose }) {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  disabled={pending || !farm || list.length === 0}
+                  disabled={pending || !farm || list.length === 0 || plantingsMock}
                   className="min-h-12 flex-1 rounded-md bg-leaf px-5 font-semibold text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submitLabel(mutation, 'Ghi hoạt động')}
